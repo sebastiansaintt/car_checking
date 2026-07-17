@@ -1,6 +1,11 @@
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.routers import auth
+from fastapi.staticfiles import StaticFiles
+from app.routers import auth, vehiculos, inspecciones
+
+# Asegurar que el directorio de subidas estáticas exista
+os.makedirs("static/uploads", exist_ok=True)
 
 app = FastAPI(title="Sistema de Inspección de Flota API", version="1.0.0")
 
@@ -13,8 +18,13 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Montar directorio estático para servir imágenes/firmas (simulación de S3)
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
 # Incluir routers
 app.include_router(auth.router, prefix="/api")
+app.include_router(vehiculos.router, prefix="/api")
+app.include_router(inspecciones.router, prefix="/api")
 
 @app.get("/")
 def read_root():
