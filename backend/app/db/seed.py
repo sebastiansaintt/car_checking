@@ -7,13 +7,45 @@ sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../.
 from app.core.database import SessionLocal
 from app.models.inspeccion import CatalogoChecklist
 from app.models.vehiculo import Vehiculo
+from app.models.usuario import Usuario
+from app.core.security import hash_password
 
 def seed_database():
     db = SessionLocal()
     try:
         print("Iniciando sembrado de la base de datos...")
 
-        # 1. Sembrado del Catálogo de Items de Checklist
+        # 1. Sembrado de Usuarios (Coordinador y Gerente)
+        usuarios = [
+            {
+                "nombre": "Juan Coordinador",
+                "email": "coordinador@carchecking.com",
+                "password": "coord123",
+                "rol": "coordinador"
+            },
+            {
+                "nombre": "Marta Gerente",
+                "email": "gerente@carchecking.com",
+                "password": "gerente123",
+                "rol": "gerente"
+            }
+        ]
+
+        seeded_users_count = 0
+        for u in usuarios:
+            exists = db.query(Usuario).filter_by(email=u["email"]).first()
+            if not exists:
+                usuario = Usuario(
+                    nombre=u["nombre"],
+                    email=u["email"],
+                    password_hash=hash_password(u["password"]),
+                    rol=u["rol"],
+                    activo=True
+                )
+                db.add(usuario)
+                seeded_users_count += 1
+
+        # 2. Sembrado del Catálogo de Items de Checklist
         checklist_items = [
             ("neumáticos", "Estado general de las llantas, desgaste y presión de aire."),
             ("frenos", "Estado de las pastillas, discos y respuesta de frenado."),
@@ -40,7 +72,7 @@ def seed_database():
                 db.add(item)
                 seeded_catalog_count += 1
         
-        # 2. Sembrado de los 12 vehículos fijos
+        # 3. Sembrado de los 12 vehículos fijos
         vehiculos = [
             {"marca": "Toyota", "modelo": "Hilux", "año": 2022, "patente": "AB-CD-12", "kilometraje_actual": 45000},
             {"marca": "Toyota", "modelo": "Hilux", "año": 2024, "patente": "EF-GH-34", "kilometraje_actual": 12000},
@@ -73,7 +105,7 @@ def seed_database():
                 seeded_vehicles_count += 1
 
         db.commit()
-        print(f"Sembrado completado: {seeded_catalog_count} ítems de checklist y {seeded_vehicles_count} vehículos agregados.")
+        print(f"Sembrado completado: {seeded_users_count} usuarios, {seeded_catalog_count} ítems de checklist y {seeded_vehicles_count} vehículos agregados.")
 
     except Exception as e:
         db.rollback()
