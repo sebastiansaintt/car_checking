@@ -14,11 +14,31 @@ class InspeccionRepository:
         ).first()
 
     @staticmethod
-    def get_all_active(db: Session, skip: int = 0, limit: int = 100) -> list[Inspeccion]:
-        """Retorna todas las inspecciones activas (no eliminadas)."""
-        return db.query(Inspeccion).filter(
-            Inspeccion.deleted_at.is_(None)
-        ).order_by(Inspeccion.fecha.desc()).offset(skip).limit(limit).all()
+    def get_all_active(
+        db: Session,
+        skip: int = 0,
+        limit: int = 100,
+        vehiculo_id: Optional[uuid.UUID] = None,
+        coordinador_id: Optional[uuid.UUID] = None,
+        resultado_general: Optional[str] = None,
+        fecha_inicio: Optional[datetime] = None,
+        fecha_fin: Optional[datetime] = None
+    ) -> list[Inspeccion]:
+        """Retorna todas las inspecciones activas (no eliminadas) aplicando filtros opcionales."""
+        query = db.query(Inspeccion).filter(Inspeccion.deleted_at.is_(None))
+        
+        if vehiculo_id:
+            query = query.filter(Inspeccion.vehiculo_id == vehiculo_id)
+        if coordinador_id:
+            query = query.filter(Inspeccion.coordinador_id == coordinador_id)
+        if resultado_general:
+            query = query.filter(Inspeccion.resultado_general == resultado_general)
+        if fecha_inicio:
+            query = query.filter(Inspeccion.fecha >= fecha_inicio)
+        if fecha_fin:
+            query = query.filter(Inspeccion.fecha <= fecha_fin)
+            
+        return query.order_by(Inspeccion.fecha.desc()).offset(skip).limit(limit).all()
 
     @staticmethod
     def get_checklist_catalog(db: Session) -> list[CatalogoChecklist]:

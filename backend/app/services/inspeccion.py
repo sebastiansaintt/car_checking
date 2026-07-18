@@ -1,5 +1,6 @@
 import uuid
 from datetime import datetime, timezone
+from typing import Optional
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
@@ -235,3 +236,28 @@ class InspeccionService:
         )
 
         return inspeccion
+
+    @staticmethod
+    def list_inspecciones(
+        db: Session,
+        skip: int = 0,
+        limit: int = 100,
+        vehiculo_id: Optional[uuid.UUID] = None,
+        coordinador_id: Optional[uuid.UUID] = None,
+        resultado_general: Optional[str] = None,
+        fecha_inicio: Optional[datetime] = None,
+        fecha_fin: Optional[datetime] = None
+    ) -> list[Inspeccion]:
+        """
+        Lista todas las inspecciones activas aplicando filtros opcionales.
+        """
+        return InspeccionRepository.get_all_active(
+            db=db,
+            skip=skip,
+            limit=limit,
+            vehiculo_id=vehiculo_id,
+            coordinador_id=coordinador_id,
+            resultado_general=resultado_general,
+            fecha_inicio=fecha_inicio,
+            fecha_fin=fecha_fin
+        )

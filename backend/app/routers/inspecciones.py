@@ -3,6 +3,7 @@ import uuid
 import json
 import shutil
 from typing import Optional
+from datetime import datetime
 from fastapi import APIRouter, Depends, Header, HTTPException, status, Request, File, UploadFile
 from sqlalchemy.orm import Session
 import redis
@@ -39,13 +40,25 @@ def get_checklist_catalog(
 def get_inspecciones(
     skip: int = 0,
     limit: int = 100,
+    vehiculo_id: Optional[uuid.UUID] = None,
+    coordinador_id: Optional[uuid.UUID] = None,
+    resultado_general: Optional[str] = None,
+    fecha_inicio: Optional[datetime] = None,
+    fecha_fin: Optional[datetime] = None,
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_user)
 ):
-    """Lista los reportes de inspección activos (no eliminados). Acceso para ambos roles."""
-    # Nota: require_role se puede usar si se quiere restringir, pero el alcance dice que el gerente ve lecturas
-    # y el coordinador CRUD. Así que ambos pueden leer.
-    return InspeccionRepository.get_all_active(db, skip=skip, limit=limit)
+    """Lista los reportes de inspección activos (no eliminados) aplicando filtros opcionales. Acceso para ambos roles."""
+    return InspeccionService.list_inspecciones(
+        db=db,
+        skip=skip,
+        limit=limit,
+        vehiculo_id=vehiculo_id,
+        coordinador_id=coordinador_id,
+        resultado_general=resultado_general,
+        fecha_inicio=fecha_inicio,
+        fecha_fin=fecha_fin
+    )
 
 @router.post("", response_model=InspeccionResponse, status_code=status.HTTP_201_CREATED)
 def create_inspeccion(
