@@ -17,6 +17,7 @@ export interface Vehiculo {
   año: number;
   kilometraje_actual: number;
   estado: string;
+  imagen_url?: string;
   fecha_ultimo_mantenimiento?: string;
   fecha_proximo_mantenimiento?: string;
 }

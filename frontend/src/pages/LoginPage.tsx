@@ -2,25 +2,33 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
+import { ToastNotification } from '../components/ui/ToastNotification';
 import { ShieldCheck, Truck } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
   const { login } = useAuth();
-  const [email, setEmail] = useState<string>('coordinador@carchecking.com');
-  const [password, setPassword] = useState<string>('coord123');
+  // Campos limpios sin credenciales expuestas por defecto
+  const [email, setEmail] = useState<string>('');
+  const [password, setPassword] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError(null);
+    setToastMessage(null);
+
+    if (!email || !password) {
+      setToastMessage('Por favor ingrese correo electrónico y contraseña.');
+      return;
+    }
+
     setIsLoading(true);
 
     try {
       await login(email, password);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error al iniciar sesión';
-      setError(msg);
+      setToastMessage(msg);
     } finally {
       setIsLoading(false);
     }
@@ -28,20 +36,17 @@ export const LoginPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-surface-subtle flex flex-col justify-center items-center p-4">
+      {/* Toast Notificación Emergente con alto z-index */}
+      <ToastNotification message={toastMessage} onClose={() => setToastMessage(null)} />
+
       <div className="w-full max-w-md bg-white border border-border rounded-card p-8 shadow-sm space-y-6">
         <div className="flex flex-col items-center text-center space-y-2">
           <div className="w-12 h-12 bg-primary text-white rounded-container flex items-center justify-center">
             <Truck className="w-6 h-6" />
           </div>
           <h1 className="text-xl font-bold text-primary">Inspección de Flota</h1>
-          <p className="text-xs text-secondary-text">Ingrese sus credenciales registradas para ingresar</p>
+          <p className="text-xs text-secondary-text">Ingrese sus credenciales para acceder a la plataforma</p>
         </div>
-
-        {error && (
-          <div className="p-3 bg-status-no_apto-bg border border-status-no_apto-border text-status-no_apto-text rounded-input text-xs">
-            {error}
-          </div>
-        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <Input

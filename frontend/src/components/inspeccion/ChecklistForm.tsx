@@ -286,7 +286,7 @@ export const ChecklistForm: React.FC<ChecklistFormProps> = ({ vehiculos, catalog
         <DigitalSignature onSave={(dataUrl) => setFirmaUrl(dataUrl)} />
         
         <div className="pt-4 flex justify-end gap-3">
-          <Button type="submit" variant="primary" size="lg" isLoading={isSubmitting}>
+          <Button type="submit" variant="primary" size="lg" isLoading={isSubmitting} disabled={!firmaUrl}>
             <Upload className="w-4 h-4" /> Registrar Inspección
           </Button>
         </div>
