@@ -8,7 +8,9 @@ from app.models.usuario import Usuario
 from app.models.inspeccion import Inspeccion, ChecklistItem, EvidenciaFotografica
 from app.repositories.vehiculo import VehiculoRepository
 from app.repositories.inspeccion import InspeccionRepository
+from app.repositories.usuario import UsuarioRepository
 from app.repositories.audit_log import AuditLogRepository
+from app.services.email import EmailService
 from app.schemas.inspeccion import InspeccionCreate, InspeccionUpdate
 
 class InspeccionService:
@@ -202,6 +204,19 @@ class InspeccionService:
             detalle=diff
         )
 
+        # Enviar notificación por email al gerente si hay cambios
+        if diff["despues"]:
+            gerente = db.query(Usuario).filter(Usuario.rol == "gerente", Usuario.activo == True).first()
+            gerente_email = gerente.email if gerente else "gerente@carchecking.com"
+            
+            EmailService.send_inspection_edited_email(
+                gerente_email=gerente_email,
+                coordinador_nombre=coordinador.nombre,
+                vehiculo_patente=vehiculo.patente if vehiculo else "N/A",
+                inspeccion_id=str(inspeccion.id),
+                diff=diff
+            )
+
         return inspeccion
 
     @staticmethod
@@ -233,6 +248,18 @@ class InspeccionService:
             entidad_id=str(inspeccion.id),
             ip=ip,
             detalle={"patente_vehiculo": inspeccion.vehiculo.patente, "fecha_original": str(inspeccion.fecha)}
+        )
+
+        # Enviar notificación por email al gerente por eliminación
+        gerente = db.query(Usuario).filter(Usuario.rol == "gerente", Usuario.activo == True).first()
+        gerente_email = gerente.email if gerente else "gerente@carchecking.com"
+
+        EmailService.send_inspection_deleted_email(
+            gerente_email=gerente_email,
+            coordinador_nombre=coordinador.nombre,
+            vehiculo_patente=inspeccion.vehiculo.patente if inspeccion.vehiculo else "N/A",
+            inspeccion_id=str(inspeccion.id),
+            fecha_original=str(inspeccion.fecha)
         )
 
         return inspeccion
