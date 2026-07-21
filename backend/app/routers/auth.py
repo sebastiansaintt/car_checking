@@ -5,26 +5,31 @@ import redis
 from app.core.config import settings
 from app.core.database import get_db
 from app.core.redis_client import get_redis
-from app.deps import get_current_user
+from app.deps import get_current_user, get_client_ip
 from app.schemas.usuario import UsuarioLogin, UsuarioResponse
 from app.services.auth import AuthService
 from app.models.usuario import Usuario
+from slowapi import Limiter
+from slowapi.util import get_remote_address
 
+limiter = Limiter(key_func=get_remote_address)
 router = APIRouter(prefix="/auth", tags=["Autenticación"])
 
 @router.post("/login", response_model=UsuarioResponse)
+@limiter.limit("5/minute")
 def login(
+    request: Request,
     login_data: UsuarioLogin,
     response: Response,
-    request: Request,
     db: Session = Depends(get_db)
 ):
     """
     Inicia sesión de usuario, genera un token de acceso JWT y lo
     guarda en una cookie HTTPOnly + Secure + SameSite=Strict.
+    Soporta Rate Limiting (máximo 5 intentos por minuto por IP).
     """
-    # Obtener la IP del cliente
-    ip = request.client.host if request.client else "unknown"
+    # Obtener la IP del cliente considerando proxies
+    ip = get_client_ip(request)
 
     # Autenticar vía servicio de negocio
     usuario, token = AuthService.login(

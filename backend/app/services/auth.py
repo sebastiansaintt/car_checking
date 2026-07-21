@@ -24,8 +24,7 @@ class AuthService:
         usuario = UsuarioRepository.get_by_email(db, email)
         if not usuario:
             # Mitigar timing attacks forzando una comparación dummy de contraseña
-            # (toma un tiempo similar al hashing de Argon2)
-            dummy_hash = "$argon2id$v=19$m=65536,t=3,p=4$dummyhashdummyhashdummy"
+            dummy_hash = "$argon2id$v=19$m=65536,t=3,p=4$c29tZXNhbHQ$Q2FyQ2hlY2tpbmdEdW1teUhhc2hWYWx1ZQ"
             verify_password(dummy_hash, "dummy_password")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,

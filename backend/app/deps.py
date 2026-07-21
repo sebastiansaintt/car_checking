@@ -6,6 +6,15 @@ from app.core.redis_client import get_redis
 from app.core.security import decode_access_token
 from app.models.usuario import Usuario
 
+def get_client_ip(request: Request) -> str:
+    """
+    Extrae la IP real del cliente considerando cabeceras de proxy de reversa (X-Forwarded-For).
+    """
+    forwarded_for = request.headers.get("X-Forwarded-For")
+    if forwarded_for:
+        return forwarded_for.split(",")[0].strip()
+    return request.client.host if request.client else "unknown"
+
 def get_current_user(
     request: Request,
     db: Session = Depends(get_db),

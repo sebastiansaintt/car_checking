@@ -26,13 +26,34 @@ export async function apiFetch<T>(endpoint: string, options: RequestInit = {}): 
     try {
       const errorData = await response.json();
       if (errorData && errorData.detail) {
-        errorMessage = typeof errorData.detail === "string" 
-          ? errorData.detail 
-          : JSON.stringify(errorData.detail);
+        if (typeof errorData.detail === "string") {
+          errorMessage = errorData.detail;
+        } else if (Array.isArray(errorData.detail)) {
+          errorMessage = errorData.detail.map((e: any) => e.msg || JSON.stringify(e)).join(', ');
+        } else if (typeof errorData.message === "string") {
+          errorMessage = errorData.message;
+        } else if (errorData.detail) {
+          errorMessage = JSON.stringify(errorData.detail);
+        }
       }
     } catch {
-      // Ignorar si la respuesta no es JSON
+      // Ignorar si el cuerpo no es JSON
     }
+
+    if (!errorMessage) {
+      if (response.status === 401) {
+        errorMessage = "Correo electrónico o contraseña incorrectos.";
+      } else if (response.status === 403) {
+        errorMessage = "No tiene permisos para realizar esta acción.";
+      } else if (response.status === 404) {
+        errorMessage = "El recurso solicitado no existe.";
+      } else if (response.status >= 500) {
+        errorMessage = "Error en el servidor al procesar la solicitud.";
+      } else {
+        errorMessage = "Ocurrió un error al procesar la solicitud.";
+      }
+    }
+
     throw new Error(errorMessage);
   }
 

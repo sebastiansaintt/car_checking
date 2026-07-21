@@ -16,7 +16,7 @@ def verify_password(hashed_password: str, plain_password: str) -> bool:
     """Verifica si una contraseña en texto plano coincide con el hash almacenado."""
     try:
         return ph.verify(hashed_password, plain_password)
-    except VerifyMismatchError:
+    except Exception:
         return False
 
 def create_access_token(subject: str, role: str, expires_delta: Optional[timedelta] = None) -> tuple[str, str]:

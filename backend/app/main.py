@@ -1,20 +1,32 @@
 import os
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+
+from app.core.middleware import SecurityHeadersMiddleware
 from app.routers import auth, vehiculos, inspecciones, export
 
 # Asegurar que el directorio de subidas estáticas exista
 os.makedirs("static/uploads", exist_ok=True)
 
+# Configurar Rate Limiter
+limiter = Limiter(key_func=get_remote_address, default_limits=["100/minute"])
 app = FastAPI(title="Sistema de Inspección de Flota API", version="1.0.0")
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
-# Configuración de CORS
+# Añadir Security Headers Middleware
+app.add_middleware(SecurityHeadersMiddleware)
+
+# Configuración de CORS restringido
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5174", "http://localhost:5173"],  # URLs de desarrollo de Vite
+    allow_origins=["http://localhost:5174", "http://localhost:5173", "http://127.0.0.1:5174"],
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 
