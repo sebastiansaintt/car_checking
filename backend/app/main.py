@@ -7,7 +7,7 @@ from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
 from app.core.middleware import SecurityHeadersMiddleware
-from app.routers import auth, vehiculos, inspecciones, export
+from app.routers import auth, vehiculos, inspecciones, export, audit_log
 
 # Asegurar que el directorio de subidas estáticas exista
 os.makedirs("static/uploads", exist_ok=True)
@@ -38,6 +38,7 @@ app.include_router(auth.router, prefix="/api")
 app.include_router(vehiculos.router, prefix="/api")
 app.include_router(inspecciones.router, prefix="/api")
 app.include_router(export.router, prefix="/api")
+app.include_router(audit_log.router, prefix="/api")
 
 @app.get("/")
 def read_root():

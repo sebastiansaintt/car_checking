@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Vehiculo, Inspeccion } from '../types';
+import { AuditLogItem } from '../types/auditLog';
 import { apiFetch } from '../lib/api';
 import { VehiculosTable } from '../components/vehiculo/VehiculosTable';
 import { Badge } from '../components/ui/Badge';
@@ -8,23 +9,28 @@ import { Button } from '../components/ui/Button';
 import { Select } from '../components/ui/Select';
 import { Modal } from '../components/ui/Modal';
 import { ToastNotification } from '../components/ui/ToastNotification';
-import { Download, Filter, LogOut, Truck, CheckCircle2, XCircle, Search, RefreshCw, Eye, ClipboardList } from 'lucide-react';
+import { Download, Filter, LogOut, Truck, CheckCircle2, XCircle, Search, RefreshCw, Eye, ClipboardList, ShieldAlert, Code } from 'lucide-react';
 
 export const GerenteDashboard: React.FC = () => {
   const { user, logout } = useAuth();
   const [vehiculos, setVehiculos] = useState<Vehiculo[]>([]);
   const [inspecciones, setInspecciones] = useState<Inspeccion[]>([]);
-  const [activeTab, setActiveTab] = useState<'inspecciones' | 'vehiculos'>('inspecciones');
+  const [auditLogs, setAuditLogs] = useState<AuditLogItem[]>([]);
+  const [activeTab, setActiveTab] = useState<'inspecciones' | 'vehiculos' | 'auditoria'>('inspecciones');
   const [loading, setLoading] = useState<boolean>(true);
   const [exporting, setExporting] = useState<boolean>(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Filtros
+  // Filtros Inspecciones
   const [filterVehiculoId, setFilterVehiculoId] = useState<string>('');
   const [filterResultado, setFilterResultado] = useState<string>('');
 
-  // Modal de Detalle
+  // Filtros Auditoría
+  const [filterAccion, setFilterAccion] = useState<string>('');
+
+  // Modales
   const [selectedInspeccion, setSelectedInspeccion] = useState<Inspeccion | null>(null);
+  const [selectedAuditLog, setSelectedAuditLog] = useState<AuditLogItem | null>(null);
 
   const loadData = async () => {
     setLoading(true);
@@ -38,12 +44,17 @@ export const GerenteDashboard: React.FC = () => {
         endpoint += `&${params.toString()}`;
       }
 
-      const [vData, iData] = await Promise.all([
+      let auditEndpoint = '/audit-logs?limit=100';
+      if (filterAccion) auditEndpoint += `&accion=${filterAccion}`;
+
+      const [vData, iData, aData] = await Promise.all([
         apiFetch<Vehiculo[]>('/vehiculos'),
-        apiFetch<Inspeccion[]>(endpoint)
+        apiFetch<Inspeccion[]>(endpoint),
+        apiFetch<AuditLogItem[]>(auditEndpoint).catch(() => [])
       ]);
       setVehiculos(vData);
       setInspecciones(iData);
+      setAuditLogs(aData);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error al cargar los datos';
       setToastMessage(msg);
@@ -54,7 +65,7 @@ export const GerenteDashboard: React.FC = () => {
 
   useEffect(() => {
     loadData();
-  }, [filterVehiculoId, filterResultado]);
+  }, [filterVehiculoId, filterResultado, filterAccion]);
 
   const handleExportExcel = async () => {
     setExporting(true);
@@ -85,6 +96,16 @@ export const GerenteDashboard: React.FC = () => {
   const totalAptos = inspecciones.filter(i => i.resultado_general === 'apto').length;
   const totalNoAptos = inspecciones.filter(i => i.resultado_general === 'no_apto').length;
 
+  const getActionBadgeVariant = (accion: string) => {
+    switch (accion) {
+      case 'crear': return 'apto';
+      case 'editar': return 'regular';
+      case 'eliminar': return 'no_apto';
+      case 'exportar': return 'neutral';
+      default: return 'neutral';
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col bg-surface-subtle">
       {/* Toast Flotante Centrado */}
@@ -103,7 +124,7 @@ export const GerenteDashboard: React.FC = () => {
             </div>
           </div>
           <Button variant="outline" size="sm" onClick={logout}>
-            <LogOut className="w-3.5 h-3.5" /> Salir
+            <LogOut className="w-3.5 h-3.5" /> Cerrar Sesión
           </Button>
         </div>
       </header>
@@ -111,7 +132,7 @@ export const GerenteDashboard: React.FC = () => {
       {/* Main Container */}
       <main className="flex-1 max-w-6xl w-full mx-auto p-4 md:p-6 space-y-6">
         {/* Navigation Tabs */}
-        <div className="flex items-center justify-between border-b border-border pb-3">
+        <div className="flex flex-wrap items-center justify-between border-b border-border pb-3 gap-2">
           <div className="flex gap-2">
             <button
               onClick={() => setActiveTab('inspecciones')}
@@ -132,6 +153,16 @@ export const GerenteDashboard: React.FC = () => {
               }`}
             >
               <Truck className="w-3.5 h-3.5" /> Catálogo Vehículos ({vehiculos.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('auditoria')}
+              className={`px-3.5 py-1.5 text-xs font-medium rounded-button transition-colors flex items-center gap-1.5 ${
+                activeTab === 'auditoria'
+                  ? 'bg-primary text-white'
+                  : 'bg-white text-secondary-text border border-border hover:bg-gray-50'
+              }`}
+            >
+              <ShieldAlert className="w-3.5 h-3.5" /> Bitácora Auditoría ({auditLogs.length})
             </button>
           </div>
         </div>
@@ -171,6 +202,74 @@ export const GerenteDashboard: React.FC = () => {
 
         {activeTab === 'vehiculos' ? (
           <VehiculosTable vehiculos={vehiculos} />
+        ) : activeTab === 'auditoria' ? (
+          /* TABLA DE AUDITORÍA TRANSVERSAL */
+          <div className="space-y-4">
+            <div className="bg-white p-4 border border-border rounded-card flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div className="flex items-center gap-2 text-xs font-semibold text-primary">
+                <Filter className="w-4 h-4 text-secondary-text" /> Filtrar Bitácora por Acción
+              </div>
+              <Select
+                value={filterAccion}
+                onChange={(e) => setFilterAccion(e.target.value)}
+                options={[
+                  { value: '', label: 'Todas las acciones' },
+                  { value: 'login', label: 'Login' },
+                  { value: 'logout', label: 'Logout' },
+                  { value: 'crear', label: 'Crear Registro' },
+                  { value: 'editar', label: 'Editar Registro' },
+                  { value: 'eliminar', label: 'Eliminar Registro' },
+                  { value: 'exportar', label: 'Exportación a Excel' }
+                ]}
+                className="w-full sm:w-64"
+              />
+            </div>
+
+            <div className="bg-white border border-border rounded-card overflow-hidden">
+              {loading ? (
+                <div className="p-12 text-center text-sm text-secondary-tertiary">Cargando bitácora de auditoría...</div>
+              ) : auditLogs.length === 0 ? (
+                <div className="p-12 text-center text-sm text-secondary-text">No existen eventos de auditoría registrados.</div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-surface-subtle border-b border-border text-secondary-text font-medium">
+                      <tr>
+                        <th className="py-3 px-4">Fecha / Hora</th>
+                        <th className="py-3 px-4">Acción</th>
+                        <th className="py-3 px-4">Entidad</th>
+                        <th className="py-3 px-4">IP Origen</th>
+                        <th className="py-3 px-4 text-right">Detalle Payload</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border">
+                      {auditLogs.map((log) => (
+                        <tr key={log.id} className="hover:bg-gray-50/50 transition-colors">
+                          <td className="py-3 px-4 font-mono text-secondary-text">
+                            {new Date(log.timestamp).toLocaleString('es-CL', { dateStyle: 'short', timeStyle: 'medium' })}
+                          </td>
+                          <td className="py-3 px-4">
+                            <Badge variant={getActionBadgeVariant(log.accion)}>
+                              {log.accion.toUpperCase()}
+                            </Badge>
+                          </td>
+                          <td className="py-3 px-4 font-medium text-primary capitalize">
+                            {log.entidad} {log.entidad_id ? `(${log.entidad_id.slice(0, 8)}...)` : ''}
+                          </td>
+                          <td className="py-3 px-4 font-mono text-secondary-text">{log.ip || 'N/A'}</td>
+                          <td className="py-3 px-4 text-right">
+                            <Button variant="outline" size="sm" onClick={() => setSelectedAuditLog(log)}>
+                              <Code className="w-3.5 h-3.5" /> Ver JSON
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
         ) : (
           <>
             {/* Barra de Filtros y Exportación */}
@@ -270,7 +369,7 @@ export const GerenteDashboard: React.FC = () => {
         )}
       </main>
 
-      {/* Modal de Detalle Completo */}
+      {/* Modal de Detalle Inspección */}
       <Modal
         isOpen={!!selectedInspeccion}
         onClose={() => setSelectedInspeccion(null)}
@@ -344,6 +443,34 @@ export const GerenteDashboard: React.FC = () => {
                 </div>
               </div>
             )}
+          </div>
+        )}
+      </Modal>
+
+      {/* Modal de Detalle JSON AuditLog */}
+      <Modal
+        isOpen={!!selectedAuditLog}
+        onClose={() => setSelectedAuditLog(null)}
+        title="Detalle JSON del Evento de Auditoría"
+      >
+        {selectedAuditLog && (
+          <div className="space-y-3 text-xs">
+            <div className="p-3 bg-surface-subtle border border-border rounded-input flex justify-between items-center">
+              <div>
+                <span className="text-secondary-text block">ID de Auditoría</span>
+                <span className="font-mono text-primary font-semibold">{selectedAuditLog.id}</span>
+              </div>
+              <Badge variant={getActionBadgeVariant(selectedAuditLog.accion)}>
+                {selectedAuditLog.accion.toUpperCase()}
+              </Badge>
+            </div>
+
+            <div>
+              <h5 className="font-semibold text-primary mb-1">Payload Detallado (Diff / Contexto)</h5>
+              <pre className="p-3 bg-gray-900 text-gray-100 font-mono text-xs rounded-input overflow-x-auto">
+                {JSON.stringify(selectedAuditLog.detalle || {}, null, 2)}
+              </pre>
+            </div>
           </div>
         )}
       </Modal>

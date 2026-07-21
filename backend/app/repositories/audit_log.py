@@ -27,3 +27,23 @@ class AuditLogRepository:
         db.commit()
         db.refresh(log)
         return log
+
+    @staticmethod
+    def get_all(
+        db: Session,
+        skip: int = 0,
+        limit: int = 100,
+        usuario_id: Optional[uuid.UUID] = None,
+        accion: Optional[str] = None,
+        entidad: Optional[str] = None
+    ) -> list[AuditLog]:
+        """Consulta registros de auditoría aplicando filtros opcionales."""
+        query = db.query(AuditLog)
+        if usuario_id:
+            query = query.filter(AuditLog.usuario_id == usuario_id)
+        if accion:
+            query = query.filter(AuditLog.accion == accion)
+        if entidad:
+            query = query.filter(AuditLog.entidad == entidad)
+            
+        return query.order_by(AuditLog.timestamp.desc()).offset(skip).limit(limit).all()
