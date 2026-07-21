@@ -117,10 +117,38 @@ export const ChecklistForm: React.FC<ChecklistFormProps> = ({ vehiculos, catalog
         evidencias: evidencias
       };
 
+      const idempotencyKey = crypto.randomUUID();
+
+      // Si el usuario está offline, guardar en la cola de IndexedDB
+      if (!navigator.onLine) {
+        const { saveOfflineInspeccion } = await import('../../lib/offlineQueue');
+        await saveOfflineInspeccion(idempotencyKey, payload);
+
+        // Notificar éxito en cola local
+        const offlineMockInspeccion: Inspeccion = {
+          id: idempotencyKey,
+          vehiculo_id: selectedVehiculoId,
+          coordinador_id: 'offline-coord',
+          fecha: new Date().toISOString(),
+          kilometraje: Number(kilometraje),
+          resultado_general: resultadoGeneral,
+          mantenimiento_recomendado: mantenimiento,
+          firma_url: firmaUrl,
+          observaciones: observaciones ? `${observaciones} (Pendiente Sincronización Red)` : '(Pendiente Sincronización Red)',
+          checklist_items: payload.checklist_items,
+          evidencias: payload.evidencias,
+          created_at: new Date().toISOString()
+        };
+
+        onSuccess(offlineMockInspeccion);
+        return;
+      }
+
+      // Si está online, enviar directo a la API
       const newInspeccion = await apiFetch<Inspeccion>('/inspecciones', {
         method: 'POST',
         headers: {
-          'X-Idempotency-Key': crypto.randomUUID()
+          'X-Idempotency-Key': idempotencyKey
         },
         body: JSON.stringify(payload)
       });

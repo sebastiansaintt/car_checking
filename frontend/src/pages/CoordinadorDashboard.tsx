@@ -9,7 +9,8 @@ import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
 import { Modal } from '../components/ui/Modal';
 import { ToastNotification } from '../components/ui/ToastNotification';
-import { PlusCircle, ClipboardList, LogOut, Truck, CheckCircle2, AlertTriangle, Edit3, ArrowRight } from 'lucide-react';
+import { useOfflineSync } from '../hooks/useOfflineSync';
+import { PlusCircle, ClipboardList, LogOut, Truck, CheckCircle2, AlertTriangle, Edit3, ArrowRight, WifiOff, RefreshCw } from 'lucide-react';
 
 export const CoordinadorDashboard: React.FC = () => {
   const { user, logout } = useAuth();
@@ -25,6 +26,12 @@ export const CoordinadorDashboard: React.FC = () => {
   const [editObservaciones, setEditObservaciones] = useState<string>('');
   const [editMantenimiento, setEditMantenimiento] = useState<string>('');
   const [isUpdating, setIsUpdating] = useState<boolean>(false);
+
+  // Hook de sincronización offline PWA
+  const { isOnline, isSyncing, pendingCount } = useOfflineSync((syncedCount) => {
+    setToastMessage(`Sincronización completada: ${syncedCount} inspección(es) subida(s) automáticamente.`);
+    loadData();
+  });
 
   const loadData = async () => {
     setLoading(true);
@@ -113,6 +120,24 @@ export const CoordinadorDashboard: React.FC = () => {
           </Button>
         </div>
       </header>
+
+      {/* Banner de Estado Offline / Sincronización PWA */}
+      {!isOnline && (
+        <div className="bg-status-warning-bg border-b border-status-warning-border px-4 py-2 text-center text-xs font-semibold text-status-warning-text flex items-center justify-center gap-2">
+          <WifiOff className="w-4 h-4 shrink-0" />
+          <span>
+            Modo Sin Conexión (Offline). Las inspecciones se guardarán en la cola local de IndexedDB
+            {pendingCount > 0 && ` (${pendingCount} pendiente(s) por sincronizar)`}.
+          </span>
+        </div>
+      )}
+
+      {isOnline && isSyncing && (
+        <div className="bg-blue-50 border-b border-blue-200 px-4 py-2 text-center text-xs font-semibold text-brand flex items-center justify-center gap-2">
+          <RefreshCw className="w-4 h-4 animate-spin shrink-0" />
+          <span>Sincronizando inspecciones guardadas offline con la base de datos central...</span>
+        </div>
+      )}
 
       {/* Main Container */}
       <main className="flex-1 max-w-6xl w-full mx-auto p-4 md:p-6 space-y-6">
