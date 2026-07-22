@@ -57,3 +57,46 @@ export interface Inspeccion {
   evidencias: Evidencia[];
   created_at: string;
 }
+
+export interface Mantenimiento {
+  id: string;
+  vehiculo_id: string;
+  coordinador_id: string;
+  inspeccion_origen_id?: string;
+  tipo: 'preventivo' | 'correctivo';
+  descripcion: string;
+  fecha_limite: string;
+  fecha_completado?: string;
+  kilometraje_al_crear: number;
+  kilometraje_al_completar?: number;
+  estado: 'pendiente' | 'en_progreso' | 'completado' | 'vencido';
+  observaciones?: string;
+  vehiculo_patente?: string;
+  vehiculo_modelo?: string;
+  coordinador_nombre?: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface Notificacion {
+  id: string;
+  usuario_id: string;
+  tipo: string;
+  titulo: string;
+  mensaje: string;
+  referencia_id?: string;
+  referencia_tipo?: string;
+  leida: boolean;
+  created_at: string;
+}
+
+export interface KpiResumen {
+  total_vehiculos: number;
+  total_inspecciones: number;
+  inspecciones_apto: number;
+  inspecciones_no_apto: number;
+  tasa_aptitud: number;
+  mantenimientos_pendientes: number;
+  mantenimientos_vencidos: number;
+}
+

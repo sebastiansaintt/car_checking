@@ -1,16 +1,19 @@
 {
-  "short_name": "CarChecking",
-  "name": "Sistema de Inspección de Flota Vehicular",
+  "short_name": "Car Check",
+  "name": "Car Check — Inspección y Control de Flota",
+  "description": "Sistema completo de inspección física de vehículos, mantenimientos preventivos y analíticas de flota.",
   "icons": [
     {
-      "src": "/favicon.ico",
-      "sizes": "64x64 32x32 24x24 16x16",
-      "type": "image/x-icon"
+      "src": "/vite.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
     }
   ],
   "start_url": "/",
-  "background_color": "#FAFAFA",
-  "theme_color": "#111827",
+  "scope": "/",
+  "background_color": "#0F172A",
+  "theme_color": "#1E3A5F",
   "display": "standalone",
   "orientation": "portrait"
 }

@@ -3,6 +3,8 @@ from app.models.usuario import Usuario
 from app.models.vehiculo import Vehiculo
 from app.models.inspeccion import CatalogoChecklist, Inspeccion, ChecklistItem, EvidenciaFotografica
 from app.models.audit_log import AuditLog
+from app.models.mantenimiento import Mantenimiento
+from app.models.notificacion import Notificacion
 
 __all__ = [
     "Base",
@@ -12,5 +14,8 @@ __all__ = [
     "Inspeccion",
     "ChecklistItem",
     "EvidenciaFotografica",
-    "AuditLog"
+    "AuditLog",
+    "Mantenimiento",
+    "Notificacion"
 ]
+

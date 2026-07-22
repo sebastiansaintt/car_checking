@@ -9,15 +9,15 @@ interface VehiculosTableProps {
 
 // Map de imágenes realistas por modelo para la vista de miniatura
 const VEHICLE_THUMBNAILS: Record<string, string> = {
-  Amarok: 'https://images.unsplash.com/photo-1533473359331-0135ef1b58bf?w=200&auto=format&fit=crop&q=80',
-  Hilux: 'https://images.unsplash.com/photo-1559416523-140ddc3d238c?w=200&auto=format&fit=crop&q=80',
-  'BT-50': 'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?w=200&auto=format&fit=crop&q=80',
-  Oroch: 'https://images.unsplash.com/photo-1563720223185-11003d516935?w=200&auto=format&fit=crop&q=80',
-  Tundra: 'https://images.unsplash.com/photo-1583121274602-3e2820c69888?w=200&auto=format&fit=crop&q=80',
-  Frontier: 'https://images.unsplash.com/photo-1609521263047-f8d205293f24?w=200&auto=format&fit=crop&q=80',
-  L200: 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?w=200&auto=format&fit=crop&q=80',
-  Navara: 'https://images.unsplash.com/photo-1605559424843-9e4c228bf1c2?w=200&auto=format&fit=crop&q=80',
-  Ranger: 'https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?w=200&auto=format&fit=crop&q=80',
+  Amarok: 'https://www.elcarrocolombiano.com/wp-content/uploads/2020/11/20201102-VOLKSWAGEN-AMAROK-2021-01-01-750x518.jpg',
+  Hilux: 'https://sp-accesorios.com/cdn/shop/collections/TOYOTA_d6a3a338-b9d3-41c1-80cd-b2b727d617cd.jpg?v=1710253402&width=1296',
+  'BT-50': 'https://panzer.com.co/wp-content/uploads/2024/09/realces-Mazda-bt50.webp',
+  Oroch: 'https://acroadtrip.blob.core.windows.net/catalogo-imagenes/xl/RT_V_88b960a46e3f4b4888b7d053ba462e05.jpg',
+  Tundra: 'https://images.hgmsites.net/lrg/2023-toyota-tundra-limited-crewmax-5-5-bed-3-5l-natl-angular-front-exterior-view_100870823_l.jpg',
+  Frontier: 'https://images.hgmsites.net/lrg/2024-nissan-frontier-crew-cab-4x2-pro-x-angular-front-exterior-view_100907162_l.webp',
+  L200: 'https://acnews.blob.core.windows.net/imgnews/paragraph/NPAZ_9196cf69e00f43bc87c1c4d6d3a35d09.jpg',
+  Navara: 'https://nissan.com.my/v2/wp-content/uploads/2025/04/nav-slide-v2_4-3.png',
+  Ranger: 'https://acnews.blob.core.windows.net/imgnews/paragraph/NPAZ_9196cf69e00f43bc87c1c4d6d3a35d09.jpg',
 };
 
 export const VehiculosTable: React.FC<VehiculosTableProps> = ({ vehiculos }) => {

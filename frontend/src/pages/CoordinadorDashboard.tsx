@@ -10,16 +10,19 @@ import { Input } from '../components/ui/Input';
 import { Modal } from '../components/ui/Modal';
 import { ToastNotification } from '../components/ui/ToastNotification';
 import { useOfflineSync } from '../hooks/useOfflineSync';
-import { PlusCircle, ClipboardList, LogOut, Truck, CheckCircle2, AlertTriangle, Edit3, ArrowRight, WifiOff, RefreshCw } from 'lucide-react';
+import { NotificationCenter } from '../components/ui/NotificationCenter';
+import { MantenimientoPanel } from '../components/mantenimiento/MantenimientoPanel';
+import { PlusCircle, ClipboardList, LogOut, Truck, CheckCircle2, AlertTriangle, Edit3, ArrowRight, WifiOff, RefreshCw, Wrench } from 'lucide-react';
 
 export const CoordinadorDashboard: React.FC = () => {
   const { user, logout } = useAuth();
   const [vehiculos, setVehiculos] = useState<Vehiculo[]>([]);
   const [catalogo, setCatalogo] = useState<CatalogoItem[]>([]);
   const [inspecciones, setInspecciones] = useState<Inspeccion[]>([]);
-  const [activeTab, setActiveTab] = useState<'resumen' | 'nueva' | 'vehiculos' | 'historial'>('resumen');
+  const [activeTab, setActiveTab] = useState<'resumen' | 'nueva' | 'vehiculos' | 'historial' | 'mantenimiento'>('resumen');
+
   const [loading, setLoading] = useState<boolean>(true);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   // Estado para modal de edicion
   const [editingInspeccion, setEditingInspeccion] = useState<Inspeccion | null>(null);
@@ -29,7 +32,10 @@ export const CoordinadorDashboard: React.FC = () => {
 
   // Hook de sincronización offline PWA
   const { isOnline, isSyncing, pendingCount } = useOfflineSync((syncedCount) => {
-    setToastMessage(`Sincronización completada: ${syncedCount} inspección(es) subida(s) automáticamente.`);
+    setToast({
+      message: `Sincronización completada: ${syncedCount} inspección(es) subida(s) automáticamente.`,
+      type: 'success'
+    });
     loadData();
   });
 
@@ -46,7 +52,7 @@ export const CoordinadorDashboard: React.FC = () => {
       setInspecciones(iData);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error al cargar los datos de la flota';
-      setToastMessage(msg);
+      setToast({ message: msg, type: 'error' });
     } finally {
       setLoading(false);
     }
@@ -59,7 +65,7 @@ export const CoordinadorDashboard: React.FC = () => {
   const handleFormSuccess = (nueva: Inspeccion) => {
     setInspecciones(prev => [nueva, ...prev]);
     setActiveTab('historial');
-    setToastMessage('Inspección registrada con éxito.');
+    setToast({ message: 'Inspección registrada con éxito.', type: 'success' });
     loadData();
   };
 
@@ -85,10 +91,10 @@ export const CoordinadorDashboard: React.FC = () => {
 
       setInspecciones(prev => prev.map(i => i.id === updated.id ? updated : i));
       setEditingInspeccion(null);
-      setToastMessage('Reporte modificado con éxito. Se ha notificado al gerente vía correo.');
+      setToast({ message: 'Reporte modificado con éxito. Se ha notificado al gerente vía correo.', type: 'success' });
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error al actualizar la inspección';
-      setToastMessage(msg);
+      setToast({ message: msg, type: 'error' });
     } finally {
       setIsUpdating(false);
     }
@@ -101,7 +107,11 @@ export const CoordinadorDashboard: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col bg-surface-subtle">
       {/* Toast Flotante Centrado con alto z-index */}
-      <ToastNotification message={toastMessage} onClose={() => setToastMessage(null)} />
+      <ToastNotification
+        message={toast?.message || null}
+        type={toast?.type || 'success'}
+        onClose={() => setToast(null)}
+      />
 
       {/* Header */}
       <header className="bg-white border-b border-border sticky top-0 z-10">
@@ -115,9 +125,13 @@ export const CoordinadorDashboard: React.FC = () => {
               <p className="text-xs text-secondary-text">Coordinador: {user?.nombre}</p>
             </div>
           </div>
-          <Button variant="outline" size="sm" onClick={logout}>
-            <LogOut className="w-3.5 h-3.5" /> Salir
-          </Button>
+          <div className="flex items-center gap-2">
+            <NotificationCenter />
+            <Button variant="outline" size="sm" onClick={logout}>
+              <LogOut className="w-3.5 h-3.5" /> Cerrar Sesión
+            </Button>
+          </div>
+
         </div>
       </header>
 
@@ -142,21 +156,21 @@ export const CoordinadorDashboard: React.FC = () => {
       {/* Main Container */}
       <main className="flex-1 max-w-6xl w-full mx-auto p-4 md:p-6 space-y-6">
         {/* Navigation Tabs */}
-        <div className="flex flex-wrap items-center justify-between border-b border-border pb-3 gap-2">
-          <div className="flex gap-2">
+        <div className="border-b border-border pb-3 -mx-4 px-4 overflow-x-auto hide-scrollbar">
+          <div className="flex items-center gap-1.5 min-w-max">
             <button
               onClick={() => setActiveTab('resumen')}
-              className={`px-3.5 py-1.5 text-xs font-medium rounded-button transition-colors ${
+              className={`px-3 py-1.5 text-xs font-medium rounded-button transition-colors whitespace-nowrap ${
                 activeTab === 'resumen'
                   ? 'bg-primary text-white'
                   : 'bg-white text-secondary-text border border-border hover:bg-gray-50'
               }`}
             >
-              Resumen Inicial
+              Resumen
             </button>
             <button
               onClick={() => setActiveTab('nueva')}
-              className={`px-3.5 py-1.5 text-xs font-medium rounded-button transition-colors flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 text-xs font-medium rounded-button transition-colors flex items-center gap-1.5 whitespace-nowrap ${
                 activeTab === 'nueva'
                   ? 'bg-primary text-white'
                   : 'bg-white text-secondary-text border border-border hover:bg-gray-50'
@@ -166,17 +180,27 @@ export const CoordinadorDashboard: React.FC = () => {
             </button>
             <button
               onClick={() => setActiveTab('vehiculos')}
-              className={`px-3.5 py-1.5 text-xs font-medium rounded-button transition-colors flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 text-xs font-medium rounded-button transition-colors flex items-center gap-1.5 whitespace-nowrap ${
                 activeTab === 'vehiculos'
                   ? 'bg-primary text-white'
                   : 'bg-white text-secondary-text border border-border hover:bg-gray-50'
               }`}
             >
-              <Truck className="w-3.5 h-3.5" /> Catálogo Vehículos ({vehiculos.length})
+              <Truck className="w-3.5 h-3.5" /> Vehículos ({vehiculos.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('mantenimiento')}
+              className={`px-3 py-1.5 text-xs font-medium rounded-button transition-colors flex items-center gap-1.5 whitespace-nowrap ${
+                activeTab === 'mantenimiento'
+                  ? 'bg-primary text-white'
+                  : 'bg-white text-secondary-text border border-border hover:bg-gray-50'
+              }`}
+            >
+              <Wrench className="w-3.5 h-3.5" /> Mantenimiento
             </button>
             <button
               onClick={() => setActiveTab('historial')}
-              className={`px-3.5 py-1.5 text-xs font-medium rounded-button transition-colors flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 text-xs font-medium rounded-button transition-colors flex items-center gap-1.5 whitespace-nowrap ${
                 activeTab === 'historial'
                   ? 'bg-primary text-white'
                   : 'bg-white text-secondary-text border border-border hover:bg-gray-50'
@@ -269,11 +293,14 @@ export const CoordinadorDashboard: React.FC = () => {
             </div>
           </div>
         ) : activeTab === 'nueva' ? (
-          <ChecklistForm vehiculos={vehiculos} catalogo={catalogo} onSuccess={handleFormSuccess} />
+          <ChecklistForm vehiculos={vehiculos} catalogo={catalogo} onSuccess={handleFormSuccess} onCancel={() => setActiveTab('resumen')} />
         ) : activeTab === 'vehiculos' ? (
           /* TABLA DE VEHÍCULOS CON MINIATURA */
           <VehiculosTable vehiculos={vehiculos} />
+        ) : activeTab === 'mantenimiento' ? (
+          <MantenimientoPanel vehiculos={vehiculos} role="coordinador" />
         ) : (
+
           /* TABLA DE HISTORIAL CON BOTÓN DE EDICIÓN */
           <div className="bg-white border border-border rounded-card overflow-hidden">
             {inspecciones.length === 0 ? (
@@ -339,35 +366,106 @@ export const CoordinadorDashboard: React.FC = () => {
         title="Editar Reporte de Inspección"
       >
         {editingInspeccion && (
-          <form onSubmit={handleSaveEdit} className="space-y-4 text-xs">
-            <div className="p-3 bg-surface-subtle border border-border rounded-input flex items-center justify-between">
-              <div>
-                <span className="text-secondary-text block">ID Registro</span>
-                <span className="font-mono text-primary font-semibold">{editingInspeccion.id}</span>
+          <form onSubmit={handleSaveEdit} className="space-y-5 text-xs">
+            {/* Contexto del Reporte Original (Solo Lectura) */}
+            <div className="space-y-3">
+              <h4 className="font-semibold text-primary text-xs border-b border-border pb-1">
+                Resumen del Reporte Registrado
+              </h4>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-3 bg-surface-subtle border border-border rounded-input">
+                <div>
+                  <span className="text-secondary-text block text-[11px]">Vehículo</span>
+                  <span className="font-medium text-primary">
+                    {vehiculos.find(v => v.id === editingInspeccion.vehiculo_id)?.marca}{' '}
+                    {vehiculos.find(v => v.id === editingInspeccion.vehiculo_id)?.modelo}{' '}
+                    ({vehiculos.find(v => v.id === editingInspeccion.vehiculo_id)?.patente || editingInspeccion.vehiculo_id})
+                  </span>
+                </div>
+                <div>
+                  <span className="text-secondary-text block text-[11px]">Kilometraje</span>
+                  <span className="font-mono text-primary font-medium">
+                    {editingInspeccion.kilometraje?.toLocaleString('es-CL')} Km
+                  </span>
+                </div>
+                <div>
+                  <span className="text-secondary-text block text-[11px]">Fecha de Registro</span>
+                  <span className="font-mono text-primary">
+                    {new Date(editingInspeccion.fecha).toLocaleString('es-CL', { dateStyle: 'short', timeStyle: 'short' })}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-secondary-text block text-[11px]">Dictamen General</span>
+                  <Badge variant={editingInspeccion.resultado_general === 'apto' ? 'apto' : 'no_apto'}>
+                    {editingInspeccion.resultado_general === 'apto' ? 'APTO' : 'NO APTO'}
+                  </Badge>
+                </div>
+                {editingInspeccion.firma_url && (
+                  <div className="col-span-2 sm:col-span-2">
+                    <span className="text-secondary-text block text-[11px]">Firma Registrada</span>
+                    <div className="bg-white border border-border rounded p-1 inline-block mt-0.5">
+                      <img src={editingInspeccion.firma_url} alt="Firma" className="h-10 object-contain" />
+                    </div>
+                  </div>
+                )}
               </div>
-              <Badge variant={editingInspeccion.resultado_general === 'apto' ? 'apto' : 'no_apto'}>
-                {editingInspeccion.resultado_general.toUpperCase()}
-              </Badge>
+
+              {/* Checklist evaluado (solo lectura) */}
+              {editingInspeccion.checklist_items && editingInspeccion.checklist_items.length > 0 && (
+                <div>
+                  <h5 className="font-semibold text-primary text-[11px] mb-1.5">Checklist Registrado</h5>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+                    {editingInspeccion.checklist_items.map((item, idx) => (
+                      <div key={idx} className="p-1.5 border border-border rounded-input bg-white flex items-center justify-between">
+                        <span className="capitalize text-secondary-text text-[11px]">
+                          {item.catalogo_nombre || `Ítem #${idx + 1}`}
+                        </span>
+                        <Badge variant={item.valor}>{item.valor.toUpperCase()}</Badge>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Evidencias fotográficas (solo lectura) */}
+              {editingInspeccion.evidencias && editingInspeccion.evidencias.length > 0 && (
+                <div>
+                  <h5 className="font-semibold text-primary text-[11px] mb-1.5">Evidencias Fotográficas Adjuntas</h5>
+                  <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                    {editingInspeccion.evidencias.map((ev, idx) => (
+                      <div key={idx} className="border border-border rounded overflow-hidden bg-gray-50">
+                        <img src={ev.url} alt="Evidencia" className="w-full h-16 object-cover" />
+                        {ev.descripcion && <p className="p-1 text-[10px] text-secondary-text truncate">{ev.descripcion}</p>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
-            <Input
-              label="Mantenimiento Recomendado"
-              value={editMantenimiento}
-              onChange={(e) => setEditMantenimiento(e.target.value)}
-              placeholder="Ej: Cambio preventivo de neumáticos..."
-            />
+            {/* Campos Editables */}
+            <div className="space-y-3 border-t border-border pt-3">
+              <h4 className="font-semibold text-primary text-xs">Campos a Modificar</h4>
 
-            <div>
-              <label className="text-xs font-medium text-primary block mb-1">Observaciones</label>
-              <textarea
-                rows={3}
-                className="w-full px-3 py-2 text-sm bg-white border border-border rounded-input text-primary focus:outline-none focus:ring-2 focus:ring-brand"
-                value={editObservaciones}
-                onChange={(e) => setEditObservaciones(e.target.value)}
+              <Input
+                label="Mantenimiento Recomendado"
+                value={editMantenimiento}
+                onChange={(e) => setEditMantenimiento(e.target.value)}
+                placeholder="Ej: Cambio preventivo de pastillas de freno..."
               />
+
+              <div>
+                <label className="text-xs font-medium text-primary block mb-1">Observaciones del Reporte</label>
+                <textarea
+                  rows={3}
+                  className="w-full px-3 py-2 text-sm bg-white border border-border rounded-input text-primary focus:outline-none focus:ring-2 focus:ring-brand"
+                  value={editObservaciones}
+                  onChange={(e) => setEditObservaciones(e.target.value)}
+                  placeholder="Detalles o aclaraciones adicionales..."
+                />
+              </div>
             </div>
 
-            <div className="pt-3 flex justify-end gap-2">
+            <div className="pt-3 flex justify-end gap-2 border-t border-border">
               <Button type="button" variant="outline" size="sm" onClick={() => setEditingInspeccion(null)}>
                 Cancelar
               </Button>

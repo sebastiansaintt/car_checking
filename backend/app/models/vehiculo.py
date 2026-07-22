@@ -19,3 +19,5 @@ class Vehiculo(Base):
 
     # Relaciones
     inspecciones = relationship("Inspeccion", back_populates="vehiculo")
+    mantenimientos = relationship("Mantenimiento", back_populates="vehiculo")
+

@@ -8,6 +8,10 @@
   body {
     @apply bg-surface-subtle text-primary font-sans antialiased min-h-screen selection:bg-gray-100;
   }
+
+  input, select, textarea, button, pre, code {
+    font-family: inherit;
+  }
 }
 
 /* Custom scrollbars for clean UI */
@@ -24,4 +28,13 @@
 }
 ::-webkit-scrollbar-thumb:hover {
   background: #9CA3AF;
+}
+
+/* Hide scrollbar for tab navigation rows on mobile */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }

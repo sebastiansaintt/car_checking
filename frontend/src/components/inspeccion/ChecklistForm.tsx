@@ -5,21 +5,25 @@ import { Select } from '../ui/Select';
 import { Button } from '../ui/Button';
 import { DigitalSignature } from '../ui/DigitalSignature';
 import { apiFetch } from '../../lib/api';
-import { CheckCircle2, AlertTriangle, XCircle, Camera, Upload } from 'lucide-react';
+import { generateUUID } from '../../lib/offlineQueue';
+import { CheckCircle2, AlertTriangle, XCircle, Camera, Upload, ArrowLeft } from 'lucide-react';
 
 interface ChecklistFormProps {
   vehiculos: Vehiculo[];
   catalogo: CatalogoItem[];
   onSuccess: (inspeccion: Inspeccion) => void;
+  onCancel?: () => void;
 }
 
-export const ChecklistForm: React.FC<ChecklistFormProps> = ({ vehiculos, catalogo, onSuccess }) => {
+export const ChecklistForm: React.FC<ChecklistFormProps> = ({ vehiculos, catalogo, onSuccess, onCancel }) => {
   const [selectedVehiculoId, setSelectedVehiculoId] = useState<string>(vehiculos[0]?.id || '');
   const selectedVehiculo = vehiculos.find(v => v.id === selectedVehiculoId);
   
   const [kilometraje, setKilometraje] = useState<number>(selectedVehiculo ? selectedVehiculo.kilometraje_actual : 0);
   const [resultadoGeneral, setResultadoGeneral] = useState<'apto' | 'no_apto'>('apto');
-  const [mantenimiento, setMantenimiento] = useState<string>('');
+  const [tipoMantenimiento, setTipoMantenimiento] = useState<'preventivo' | 'correctivo' | ''>('');
+  const [fechaLimiteMantenimiento, setFechaLimiteMantenimiento] = useState<string>('');
+  const [detalleMantenimiento, setDetalleMantenimiento] = useState<string>('');
   const [observaciones, setObservaciones] = useState<string>('');
   const [firmaUrl, setFirmaUrl] = useState<string>('');
   
@@ -103,11 +107,19 @@ export const ChecklistForm: React.FC<ChecklistFormProps> = ({ vehiculos, catalog
 
     setIsSubmitting(true);
     try {
+      // Construir recomendación de mantenimiento estructurada
+      let mantenimientoFinal: string | undefined = undefined;
+      if (tipoMantenimiento || detalleMantenimiento || fechaLimiteMantenimiento) {
+        const tipoStr = tipoMantenimiento ? `[${tipoMantenimiento.toUpperCase()}] ` : '';
+        const fechaStr = fechaLimiteMantenimiento ? ` (Límite: ${fechaLimiteMantenimiento})` : '';
+        mantenimientoFinal = `${tipoStr}${detalleMantenimiento}${fechaStr}`.trim();
+      }
+
       const payload = {
         vehiculo_id: selectedVehiculoId,
         kilometraje: Number(kilometraje),
         resultado_general: resultadoGeneral,
-        mantenimiento_recomendado: mantenimiento || undefined,
+        mantenimiento_recomendado: mantenimientoFinal,
         firma_url: firmaUrl,
         observaciones: observaciones || undefined,
         checklist_items: Object.entries(itemsEvaluation).map(([catalogo_id, valor]) => ({
@@ -117,7 +129,7 @@ export const ChecklistForm: React.FC<ChecklistFormProps> = ({ vehiculos, catalog
         evidencias: evidencias
       };
 
-      const idempotencyKey = crypto.randomUUID();
+      const idempotencyKey = generateUUID();
 
       // Si el usuario está offline, guardar en la cola de IndexedDB
       if (!navigator.onLine) {
@@ -132,7 +144,7 @@ export const ChecklistForm: React.FC<ChecklistFormProps> = ({ vehiculos, catalog
           fecha: new Date().toISOString(),
           kilometraje: Number(kilometraje),
           resultado_general: resultadoGeneral,
-          mantenimiento_recomendado: mantenimiento,
+          mantenimiento_recomendado: mantenimientoFinal,
           firma_url: firmaUrl,
           observaciones: observaciones ? `${observaciones} (Pendiente Sincronización Red)` : '(Pendiente Sincronización Red)',
           checklist_items: payload.checklist_items,
@@ -163,7 +175,19 @@ export const ChecklistForm: React.FC<ChecklistFormProps> = ({ vehiculos, catalog
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 max-w-3xl mx-auto">
+    <div className="space-y-4 max-w-3xl mx-auto">
+      {/* Back button */}
+      {onCancel && (
+        <button
+          type="button"
+          onClick={onCancel}
+          className="flex items-center gap-2 text-xs font-medium text-secondary-text hover:text-primary transition-colors group"
+        >
+          <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
+          Volver al panel principal
+        </button>
+      )}
+    <form onSubmit={handleSubmit} className="space-y-6">
       {errorMsg && (
         <div className="p-3.5 bg-status-no_apto-bg border border-status-no_apto-border text-status-no_apto-text rounded-input text-sm">
           {errorMsg}
@@ -249,26 +273,56 @@ export const ChecklistForm: React.FC<ChecklistFormProps> = ({ vehiculos, catalog
         </div>
       </div>
 
-      {/* Sección 3: Resultado, Observaciones y Evidencias */}
+      {/* Sección 3: Resultado, Mantenimiento, Observaciones y Evidencias */}
       <div className="bg-white p-5 border border-border rounded-card space-y-4">
         <h4 className="text-sm font-semibold text-primary border-b border-border pb-2">3. Dictamen y Evidencias</h4>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <Select
-            label="Resultado General de Inspección"
-            value={resultadoGeneral}
-            onChange={(e) => setResultadoGeneral(e.target.value as 'apto' | 'no_apto')}
-            options={[
-              { value: 'apto', label: 'APTO (Operativo)' },
-              { value: 'no_apto', label: 'NO APTO (Requiere Mantención/Inmovilización)' }
-            ]}
-          />
-          <Input
-            label="Mantenimiento Recomendado (Opcional)"
-            placeholder="Ej: Cambio preventivo de pastillas de freno..."
-            value={mantenimiento}
-            onChange={(e) => setMantenimiento(e.target.value)}
-          />
+        <Select
+          label="Resultado General de Inspección"
+          value={resultadoGeneral}
+          onChange={(e) => setResultadoGeneral(e.target.value as 'apto' | 'no_apto')}
+          options={[
+            { value: 'apto', label: 'APTO (Operativo)' },
+            { value: 'no_apto', label: 'NO APTO (Requiere Mantención/Inmovilización)' }
+          ]}
+        />
+
+        {/* Mantenimiento estructurado */}
+        <div className="border border-border rounded-input p-4 space-y-3 bg-surface-subtle">
+          <h5 className="text-xs font-semibold text-primary">Planificación de Mantenimiento (Opcional)</h5>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Select
+              label="Tipo de Mantenimiento"
+              value={tipoMantenimiento}
+              onChange={(e) => setTipoMantenimiento(e.target.value as 'preventivo' | 'correctivo' | '')}
+              options={[
+                { value: '', label: 'Seleccionar tipo...' },
+                { value: 'preventivo', label: 'Preventivo (Rutina / Programado)' },
+                { value: 'correctivo', label: 'Correctivo (Reparación Urgente)' }
+              ]}
+            />
+            <Input
+              label="Fecha Límite de Realización"
+              type="date"
+              value={fechaLimiteMantenimiento}
+              onChange={(e) => setFechaLimiteMantenimiento(e.target.value)}
+              min={new Date().toISOString().split('T')[0]}
+            />
+          </div>
+
+          <div>
+            <label className="text-xs font-medium text-primary block mb-1">
+              Detalle del Mantenimiento (ej: frenos, llantas, luces)
+            </label>
+            <textarea
+              rows={2}
+              className="w-full px-3 py-2 text-sm bg-white border border-border rounded-input text-primary focus:outline-none focus:ring-2 focus:ring-brand"
+              placeholder="Describa el mantenimiento requerido y los componentes a intervenir..."
+              value={detalleMantenimiento}
+              onChange={(e) => setDetalleMantenimiento(e.target.value)}
+            />
+          </div>
         </div>
 
         <div>
@@ -282,15 +336,38 @@ export const ChecklistForm: React.FC<ChecklistFormProps> = ({ vehiculos, catalog
           />
         </div>
 
-        {/* Subida de Evidencia Fotográfica */}
+        {/* Subida de Evidencia Fotográfica con opciones Cámara y Galería */}
         <div className="border-t border-border pt-4">
-          <div className="flex items-center justify-between mb-2">
+          <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
             <span className="text-xs font-medium text-primary">Evidencias Fotográficas ({evidencias.length})</span>
-            <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 bg-surface-subtle text-primary border border-border rounded-input text-xs font-medium hover:bg-gray-100 transition-colors">
-              <Camera className="w-3.5 h-3.5" />
-              {isUploading ? 'Subiendo...' : 'Adjuntar Foto'}
-              <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} disabled={isUploading} />
-            </label>
+            <div className="flex items-center gap-2">
+              {/* Botón Tomar Foto (Cámara en dispositivos móviles) */}
+              <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 bg-surface-subtle text-primary border border-border rounded-input text-xs font-medium hover:bg-gray-100 transition-colors">
+                <Camera className="w-3.5 h-3.5" />
+                {isUploading ? 'Cargando...' : 'Tomar Foto'}
+                <input
+                  type="file"
+                  accept="image/*"
+                  capture="environment"
+                  className="hidden"
+                  onChange={handleFileUpload}
+                  disabled={isUploading}
+                />
+              </label>
+
+              {/* Botón Seleccionar de Galería */}
+              <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 bg-surface-subtle text-primary border border-border rounded-input text-xs font-medium hover:bg-gray-100 transition-colors">
+                <Upload className="w-3.5 h-3.5" />
+                Galería
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={handleFileUpload}
+                  disabled={isUploading}
+                />
+              </label>
+            </div>
           </div>
 
           {evidencias.length > 0 && (
@@ -320,5 +397,6 @@ export const ChecklistForm: React.FC<ChecklistFormProps> = ({ vehiculos, catalog
         </div>
       </div>
     </form>
+    </div>
   );
 };

@@ -21,7 +21,7 @@ class Inspeccion(Base):
     kilometraje: Mapped[int] = mapped_column(Integer, nullable=False)
     resultado_general: Mapped[str] = mapped_column(String(20), nullable=False)  # 'apto' o 'no_apto'
     mantenimiento_recomendado: Mapped[str] = mapped_column(Text, nullable=True)
-    firma_url: Mapped[str] = mapped_column(String(512), nullable=False)
+    firma_url: Mapped[str] = mapped_column(Text, nullable=False)
     observaciones: Mapped[str] = mapped_column(Text, nullable=True)
     created_at: Mapped[DateTime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
     updated_at: Mapped[DateTime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now(), nullable=False)
@@ -50,13 +50,18 @@ class ChecklistItem(Base):
     catalogo = relationship("CatalogoChecklist")
     evidencias = relationship("EvidenciaFotografica", back_populates="checklist_item")
 
+    @property
+    def catalogo_nombre(self) -> str | None:
+        return self.catalogo.nombre if self.catalogo else None
+
+
 class EvidenciaFotografica(Base):
     __tablename__ = "evidencias_fotograficas"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     inspeccion_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("inspecciones.id", ondelete="CASCADE"), nullable=False)
     checklist_item_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("checklist_items.id", ondelete="SET NULL"), nullable=True)
-    url: Mapped[str] = mapped_column(String(512), nullable=False)
+    url: Mapped[str] = mapped_column(Text, nullable=False)
     descripcion: Mapped[str] = mapped_column(Text, nullable=True)
     created_at: Mapped[DateTime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
 

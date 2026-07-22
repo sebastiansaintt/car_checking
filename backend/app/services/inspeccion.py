@@ -11,7 +11,9 @@ from app.repositories.inspeccion import InspeccionRepository
 from app.repositories.usuario import UsuarioRepository
 from app.repositories.audit_log import AuditLogRepository
 from app.services.email import EmailService
+from app.services.notificacion import NotificacionService
 from app.schemas.inspeccion import InspeccionCreate, InspeccionUpdate
+
 
 class InspeccionService:
     @staticmethod
@@ -120,7 +122,20 @@ class InspeccionService:
             }
         )
 
+        # 9. Notificar in-app al gerente
+        icono = "🔴" if data.resultado_general == "no_apto" else "🟢"
+        NotificacionService.notificar_por_rol(
+            db=db,
+            rol="gerente",
+            tipo=f"inspeccion_{data.resultado_general}",
+            titulo=f"{icono} Inspección {data.resultado_general.upper()}",
+            mensaje=f"Vehículo {vehiculo.patente} ({vehiculo.marca} {vehiculo.modelo}) fue inspeccionado por {coordinador.nombre}. Dictamen: {data.resultado_general.upper()}.",
+            referencia_id=str(inspeccion.id),
+            referencia_tipo="inspeccion"
+        )
+
         return inspeccion
+
 
     @staticmethod
     def update_inspeccion(
@@ -216,6 +231,16 @@ class InspeccionService:
                 inspeccion_id=str(inspeccion.id),
                 diff=diff
             )
+            NotificacionService.notificar_por_rol(
+                db=db,
+                rol="gerente",
+                tipo="inspeccion_editada",
+                titulo="✏️ Reporte de Inspección Modificado",
+                mensaje=f"Coordinador {coordinador.nombre} modificó observaciones/datos de la inspección para el vehículo {vehiculo.patente if vehiculo else 'N/A'}.",
+                referencia_id=str(inspeccion.id),
+                referencia_tipo="inspeccion"
+            )
+
 
         return inspeccion
 
@@ -261,6 +286,16 @@ class InspeccionService:
             inspeccion_id=str(inspeccion.id),
             fecha_original=str(inspeccion.fecha)
         )
+        NotificacionService.notificar_por_rol(
+            db=db,
+            rol="gerente",
+            tipo="inspeccion_eliminada",
+            titulo="🚨 Reporte de Inspección Eliminado",
+            mensaje=f"Coordinador {coordinador.nombre} eliminó un reporte de inspección del vehículo {inspeccion.vehiculo.patente if inspeccion.vehiculo else 'N/A'}.",
+            referencia_id=str(inspeccion.id),
+            referencia_tipo="inspeccion"
+        )
+
 
         return inspeccion
 

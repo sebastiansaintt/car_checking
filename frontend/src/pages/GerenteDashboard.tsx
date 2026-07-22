@@ -9,17 +9,21 @@ import { Button } from '../components/ui/Button';
 import { Select } from '../components/ui/Select';
 import { Modal } from '../components/ui/Modal';
 import { ToastNotification } from '../components/ui/ToastNotification';
-import { Download, Filter, LogOut, Truck, CheckCircle2, XCircle, Search, RefreshCw, Eye, ClipboardList, ShieldAlert, Code } from 'lucide-react';
+import { NotificationCenter } from '../components/ui/NotificationCenter';
+import { AnalyticsDashboard } from '../components/analytics/AnalyticsDashboard';
+import { MantenimientoPanel } from '../components/mantenimiento/MantenimientoPanel';
+import { Download, Filter, LogOut, Truck, CheckCircle2, XCircle, Search, RefreshCw, Eye, ClipboardList, ShieldAlert, Code, BarChart3, Wrench } from 'lucide-react';
 
 export const GerenteDashboard: React.FC = () => {
   const { user, logout } = useAuth();
   const [vehiculos, setVehiculos] = useState<Vehiculo[]>([]);
   const [inspecciones, setInspecciones] = useState<Inspeccion[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLogItem[]>([]);
-  const [activeTab, setActiveTab] = useState<'inspecciones' | 'vehiculos' | 'auditoria'>('inspecciones');
+  const [activeTab, setActiveTab] = useState<'inspecciones' | 'analiticas' | 'mantenimiento' | 'vehiculos' | 'auditoria'>('inspecciones');
+
   const [loading, setLoading] = useState<boolean>(true);
   const [exporting, setExporting] = useState<boolean>(false);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
   // Filtros Inspecciones
   const [filterVehiculoId, setFilterVehiculoId] = useState<string>('');
@@ -57,7 +61,7 @@ export const GerenteDashboard: React.FC = () => {
       setAuditLogs(aData);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error al cargar los datos';
-      setToastMessage(msg);
+      setToast({ message: msg, type: 'error' });
     } finally {
       setLoading(false);
     }
@@ -85,7 +89,7 @@ export const GerenteDashboard: React.FC = () => {
       a.remove();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Error al exportar a Excel';
-      setToastMessage(msg);
+      setToast({ message: msg, type: 'error' });
     } finally {
       setExporting(false);
     }
@@ -109,7 +113,11 @@ export const GerenteDashboard: React.FC = () => {
   return (
     <div className="min-h-screen flex flex-col bg-surface-subtle">
       {/* Toast Flotante Centrado */}
-      <ToastNotification message={toastMessage} onClose={() => setToastMessage(null)} />
+      <ToastNotification
+        message={toast?.message || null}
+        type={toast?.type || 'success'}
+        onClose={() => setToast(null)}
+      />
 
       {/* Header */}
       <header className="bg-white border-b border-border sticky top-0 z-10">
@@ -123,20 +131,24 @@ export const GerenteDashboard: React.FC = () => {
               <p className="text-xs text-secondary-text">Gerente (Lectura + Auditoría) — {user?.nombre}</p>
             </div>
           </div>
-          <Button variant="outline" size="sm" onClick={logout}>
-            <LogOut className="w-3.5 h-3.5" /> Cerrar Sesión
-          </Button>
+          <div className="flex items-center gap-2">
+            <NotificationCenter />
+            <Button variant="outline" size="sm" onClick={logout}>
+              <LogOut className="w-3.5 h-3.5" /> Cerrar Sesión
+            </Button>
+          </div>
+
         </div>
       </header>
 
       {/* Main Container */}
       <main className="flex-1 max-w-6xl w-full mx-auto p-4 md:p-6 space-y-6">
         {/* Navigation Tabs */}
-        <div className="flex flex-wrap items-center justify-between border-b border-border pb-3 gap-2">
-          <div className="flex gap-2">
+        <div className="border-b border-border pb-3 -mx-4 px-4 overflow-x-auto hide-scrollbar">
+          <div className="flex items-center gap-1.5 min-w-max">
             <button
               onClick={() => setActiveTab('inspecciones')}
-              className={`px-3.5 py-1.5 text-xs font-medium rounded-button transition-colors flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 text-xs font-medium rounded-button transition-colors flex items-center gap-1.5 whitespace-nowrap ${
                 activeTab === 'inspecciones'
                   ? 'bg-primary text-white'
                   : 'bg-white text-secondary-text border border-border hover:bg-gray-50'
@@ -145,24 +157,45 @@ export const GerenteDashboard: React.FC = () => {
               <ClipboardList className="w-3.5 h-3.5" /> Inspecciones ({inspecciones.length})
             </button>
             <button
+              onClick={() => setActiveTab('analiticas')}
+              className={`px-3 py-1.5 text-xs font-medium rounded-button transition-colors flex items-center gap-1.5 whitespace-nowrap ${
+                activeTab === 'analiticas'
+                  ? 'bg-primary text-white'
+                  : 'bg-white text-secondary-text border border-border hover:bg-gray-50'
+              }`}
+            >
+              <BarChart3 className="w-3.5 h-3.5" /> Analíticas EDA
+            </button>
+            <button
+              onClick={() => setActiveTab('mantenimiento')}
+              className={`px-3 py-1.5 text-xs font-medium rounded-button transition-colors flex items-center gap-1.5 whitespace-nowrap ${
+                activeTab === 'mantenimiento'
+                  ? 'bg-primary text-white'
+                  : 'bg-white text-secondary-text border border-border hover:bg-gray-50'
+              }`}
+            >
+              <Wrench className="w-3.5 h-3.5" /> Mantenimiento
+            </button>
+
+            <button
               onClick={() => setActiveTab('vehiculos')}
-              className={`px-3.5 py-1.5 text-xs font-medium rounded-button transition-colors flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 text-xs font-medium rounded-button transition-colors flex items-center gap-1.5 whitespace-nowrap ${
                 activeTab === 'vehiculos'
                   ? 'bg-primary text-white'
                   : 'bg-white text-secondary-text border border-border hover:bg-gray-50'
               }`}
             >
-              <Truck className="w-3.5 h-3.5" /> Catálogo Vehículos ({vehiculos.length})
+              <Truck className="w-3.5 h-3.5" /> Vehículos ({vehiculos.length})
             </button>
             <button
               onClick={() => setActiveTab('auditoria')}
-              className={`px-3.5 py-1.5 text-xs font-medium rounded-button transition-colors flex items-center gap-1.5 ${
+              className={`px-3 py-1.5 text-xs font-medium rounded-button transition-colors flex items-center gap-1.5 whitespace-nowrap ${
                 activeTab === 'auditoria'
                   ? 'bg-primary text-white'
                   : 'bg-white text-secondary-text border border-border hover:bg-gray-50'
               }`}
             >
-              <ShieldAlert className="w-3.5 h-3.5" /> Bitácora Auditoría ({auditLogs.length})
+              <ShieldAlert className="w-3.5 h-3.5" /> Auditoría ({auditLogs.length})
             </button>
           </div>
         </div>
@@ -200,9 +233,14 @@ export const GerenteDashboard: React.FC = () => {
           </div>
         </div>
 
-        {activeTab === 'vehiculos' ? (
+        {activeTab === 'analiticas' ? (
+          <AnalyticsDashboard />
+        ) : activeTab === 'mantenimiento' ? (
+          <MantenimientoPanel vehiculos={vehiculos} role="gerente" />
+        ) : activeTab === 'vehiculos' ? (
           <VehiculosTable vehiculos={vehiculos} />
         ) : activeTab === 'auditoria' ? (
+
           /* TABLA DE AUDITORÍA TRANSVERSAL */
           <div className="space-y-4">
             <div className="bg-white p-4 border border-border rounded-card flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
@@ -404,7 +442,7 @@ export const GerenteDashboard: React.FC = () => {
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {selectedInspeccion.checklist_items.map((item, idx) => (
                   <div key={idx} className="p-2 border border-border rounded-input bg-white flex items-center justify-between">
-                    <span className="capitalize text-secondary-text">{item.catalogo_nombre || 'Item'}</span>
+                    <span className="capitalize text-secondary-text">{item.catalogo_nombre || `Ítem #${idx + 1}`}</span>
                     <Badge variant={item.valor}>{item.valor.toUpperCase()}</Badge>
                   </div>
                 ))}

@@ -26,8 +26,8 @@ export default {
           tertiary: "#9CA3AF",
         },
         brand: {
-          DEFAULT: "#2563EB",
-          hover: "#1D4ED8",
+          DEFAULT: "#1E3A5F",
+          hover: "#142843",
         },
         status: {
           apto: {

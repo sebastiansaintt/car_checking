@@ -10,7 +10,7 @@ interface ToastProps {
 
 export const ToastNotification: React.FC<ToastProps> = ({
   message,
-  type = 'error',
+  type = 'success',
   onClose,
   duration = 5000
 }) => {

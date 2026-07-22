@@ -1,14 +1,17 @@
 import uuid
 from datetime import datetime, timezone
 from typing import Optional
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from app.models.inspeccion import Inspeccion, ChecklistItem, EvidenciaFotografica, CatalogoChecklist
 
 class InspeccionRepository:
     @staticmethod
     def get_by_id(db: Session, inspeccion_id: uuid.UUID) -> Optional[Inspeccion]:
         """Obtiene una inspección que no esté marcada como eliminada."""
-        return db.query(Inspeccion).filter(
+        return db.query(Inspeccion).options(
+            joinedload(Inspeccion.checklist_items).joinedload(ChecklistItem.catalogo),
+            joinedload(Inspeccion.evidencias)
+        ).filter(
             Inspeccion.id == inspeccion_id, 
             Inspeccion.deleted_at.is_(None)
         ).first()
@@ -25,7 +28,11 @@ class InspeccionRepository:
         fecha_fin: Optional[datetime] = None
     ) -> list[Inspeccion]:
         """Retorna todas las inspecciones activas (no eliminadas) aplicando filtros opcionales."""
-        query = db.query(Inspeccion).filter(Inspeccion.deleted_at.is_(None))
+        query = db.query(Inspeccion).options(
+            joinedload(Inspeccion.checklist_items).joinedload(ChecklistItem.catalogo),
+            joinedload(Inspeccion.evidencias)
+        ).filter(Inspeccion.deleted_at.is_(None))
+
         
         if vehiculo_id:
             query = query.filter(Inspeccion.vehiculo_id == vehiculo_id)

@@ -23,11 +23,56 @@ export const DigitalSignature: React.FC<SignatureProps> = ({ onSave, initialFirm
   };
 
   const handleConfirm = () => {
-    if (sigPad.current && !sigPad.current.isEmpty()) {
-      const dataUrl = sigPad.current.getTrimmedCanvas().toDataURL('image/png');
-      setSignaturePreview(dataUrl);
-      setIsConfirmed(true);
-      onSave(dataUrl);
+    if (!sigPad.current) return;
+
+    // Check if pad is empty
+    if (sigPad.current.isEmpty && sigPad.current.isEmpty()) {
+      return;
+    }
+
+    try {
+      let dataUrl = '';
+
+      // 1. Try getTrimmedCanvas if supported
+      if (typeof sigPad.current.getTrimmedCanvas === 'function') {
+        try {
+          const trimmedCanvas = sigPad.current.getTrimmedCanvas();
+          if (trimmedCanvas) {
+            dataUrl = trimmedCanvas.toDataURL('image/png');
+          }
+        } catch (err) {
+          console.warn('getTrimmedCanvas failed, using fallback:', err);
+        }
+      }
+
+      // 2. Fallback to toDataURL on signature pad instance
+      if (!dataUrl && typeof sigPad.current.toDataURL === 'function') {
+        try {
+          dataUrl = sigPad.current.toDataURL('image/png');
+        } catch (err) {
+          console.warn('toDataURL failed, using canvas fallback:', err);
+        }
+      }
+
+      // 3. Fallback to raw canvas element toDataURL
+      if (!dataUrl && typeof sigPad.current.getCanvas === 'function') {
+        try {
+          const canvas = sigPad.current.getCanvas();
+          if (canvas) {
+            dataUrl = canvas.toDataURL('image/png');
+          }
+        } catch (err) {
+          console.error('getCanvas toDataURL failed:', err);
+        }
+      }
+
+      if (dataUrl) {
+        setSignaturePreview(dataUrl);
+        setIsConfirmed(true);
+        onSave(dataUrl);
+      }
+    } catch (error) {
+      console.error('Error confirming signature:', error);
     }
   };
 
@@ -61,6 +106,7 @@ export const DigitalSignature: React.FC<SignatureProps> = ({ onSave, initialFirm
               canvasProps={{
                 className: 'w-full h-36 border-none cursor-crosshair',
               }}
+              onBegin={() => setHasDrawn(true)}
               onEnd={handleStrokeEnd}
             />
           </div>
