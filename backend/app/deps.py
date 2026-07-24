@@ -18,7 +18,7 @@ def get_client_ip(request: Request) -> str:
 def get_current_user(
     request: Request,
     db: Session = Depends(get_db),
-    redis_client: redis.Redis = Depends(get_redis)
+    redis_client: redis.Redis | None = Depends(get_redis)
 ) -> Usuario:
     """
     Extrae el token JWT de la cookie 'access_token', lo decodifica,
@@ -45,13 +45,14 @@ def get_current_user(
             detail="Token de acceso con formato inválido."
         )
 
-    # Verificar si el jti está en la blacklist de Redis
-    is_blacklisted = redis_client.get(f"blacklist:{jti}")
-    if is_blacklisted:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Sesión cerrada. Inicie sesión nuevamente."
-        )
+    # Verificar si el jti está en la blacklist de Redis (si Redis está disponible)
+    if redis_client is not None:
+        is_blacklisted = redis_client.get(f"blacklist:{jti}")
+        if is_blacklisted:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Sesión cerrada. Inicie sesión nuevamente."
+            )
 
     user_id = payload.get("sub")
     if not user_id:

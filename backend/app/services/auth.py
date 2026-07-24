@@ -57,7 +57,7 @@ class AuthService:
     @staticmethod
     def logout(
         db: Session,
-        redis_client: redis.Redis,
+        redis_client: redis.Redis | None,
         token: str,
         user: Usuario,
         ip: str
@@ -66,16 +66,15 @@ class AuthService:
         Invalida el token JWT agregándolo a la blacklist de Redis y
         registra la acción de logout en el AuditLog.
         """
+        # Agregar token a blacklist de Redis si está disponible
         payload = decode_access_token(token)
-        if payload:
+        if redis_client is not None and payload:
             jti = payload.get("jti")
             exp = payload.get("exp")
             if jti and exp:
-                # Calcular el tiempo restante de expiración del token para el TTL en Redis
                 now = int(datetime.now(timezone.utc).timestamp())
                 ttl = exp - now
                 if ttl > 0:
-                    # Registrar en blacklist de Redis
                     redis_client.setex(f"blacklist:{jti}", ttl, "1")
 
         # Registrar en AuditLog
