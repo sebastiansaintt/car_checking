@@ -39,15 +39,17 @@ def login(
         ip=ip
     )
 
-    # Configurar la cookie HTTPOnly + Secure (solo en producción) + SameSite=Strict
+    # SameSite=None es obligatorio para cookies cross-origin (Vercel → Render)
+    # Secure=True es requerido por los navegadores cuando SameSite=None
+    is_production = settings.ENVIRONMENT != "development"
     response.set_cookie(
         key="access_token",
         value=token,
         httponly=True,
-        secure=settings.ENVIRONMENT != "development",
-        samesite="strict",
+        secure=is_production,
+        samesite="none" if is_production else "lax",
         max_age=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
-        path="/" # Disponible para toda la aplicación
+        path="/"
     )
 
     return usuario
@@ -77,12 +79,13 @@ def logout(
             ip=ip
         )
 
-    # Eliminar la cookie en la respuesta del navegador
+    # Eliminar la cookie manteniendo los mismos atributos con que fue creada
+    is_production = settings.ENVIRONMENT != "development"
     response.delete_cookie(
         key="access_token",
         httponly=True,
-        secure=settings.ENVIRONMENT != "development",
-        samesite="strict",
+        secure=is_production,
+        samesite="none" if is_production else "lax",
         path="/"
     )
 
