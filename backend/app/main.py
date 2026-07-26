@@ -3,17 +3,17 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from slowapi import Limiter, _rate_limit_exceeded_handler
-from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 
 from app.core.middleware import SecurityHeadersMiddleware
+from app.deps import get_client_ip
 from app.routers import auth, vehiculos, inspecciones, export, audit_log, mantenimientos, notificaciones, estadisticas
 
 # Asegurar que el directorio de subidas estáticas exista
 os.makedirs("static/uploads", exist_ok=True)
 
-# Configurar Rate Limiter
-limiter = Limiter(key_func=get_remote_address, default_limits=["100/minute"])
+# Configurar Rate Limiter usando la IP real del cliente (tras proxies de Render)
+limiter = Limiter(key_func=get_client_ip, default_limits=["100/minute"])
 app = FastAPI(title="Sistema de Inspección de Flota API", version="1.0.0")
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
@@ -21,18 +21,21 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 # Añadir Security Headers Middleware
 app.add_middleware(SecurityHeadersMiddleware)
 
-# Configuración de CORS — orígenes leídos desde variable de entorno
-# En desarrollo: ALLOWED_ORIGINS no se define y usa los defaults locales
-# En producción: ALLOWED_ORIGINS=https://tu-app.vercel.app,https://*.vercel.app
+# Configuración de CORS — orígenes leídos desde variable de entorno + regex para subdominios Vercel
 _raw_origins = os.getenv(
     "ALLOWED_ORIGINS",
-    "http://localhost:5173,http://localhost:5174,http://127.0.0.1:5174"
+    "http://localhost:5173,http://localhost:5174,http://127.0.0.1:5174,https://car-checking-beta.vercel.app"
 )
-ALLOWED_ORIGINS = [o.strip() for o in _raw_origins.split(",") if o.strip()]
+# Normalizar orígenes eliminando espacios y barras al final para evitar errores de preflight
+ALLOWED_ORIGINS = [o.strip().rstrip("/") for o in _raw_origins.split(",") if o.strip()]
+
+# Regex para permitir dinámicamente cualquier subdominio o URL de previsualización en Vercel
+ALLOW_ORIGIN_REGEX = r"https://.*\.vercel\.app"
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=ALLOWED_ORIGINS,
+    allow_origin_regex=ALLOW_ORIGIN_REGEX,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],

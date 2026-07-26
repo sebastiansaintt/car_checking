@@ -3,7 +3,8 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 from app.core.config import settings
 
 # pool_pre_ping=True ayuda a evitar errores de conexiones caídas (liveness checks)
-engine = create_engine(settings.DATABASE_URL, pool_pre_ping=True)
+# effective_database_url convierte automático 'postgres://' (usado por Render) a 'postgresql://'
+engine = create_engine(settings.effective_database_url, pool_pre_ping=True)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 Base = declarative_base()

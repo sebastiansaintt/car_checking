@@ -42,8 +42,8 @@ self.addEventListener('fetch', (event) => {
   event.respondWith(
     fetch(event.request)
       .then((response) => {
-        // Guardar copia fresca en caché
-        if (response.status === 200) {
+        // Guardar copia fresca en caché para peticiones HTTP/HTTPS
+        if (response.status === 200 && (event.request.url.startsWith('http://') || event.request.url.startsWith('https://'))) {
           const responseClone = response.clone();
           caches.open(CACHE_NAME).then((cache) => {
             cache.put(event.request, responseClone);
