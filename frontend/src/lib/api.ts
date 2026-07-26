@@ -1,7 +1,8 @@
 // Base URL para comunicarse con el backend FastAPI
 // En producción (Vercel) se inyecta VITE_API_URL=https://tu-backend.onrender.com/api
 // En desarrollo local con Docker, el proxy de Vite redirige /api → backend:8000
-const API_BASE_URL: string = import.meta.env.VITE_API_URL ?? "/api";
+const rawApiUrl = import.meta.env.VITE_API_URL ?? "/api";
+export const API_BASE_URL: string = rawApiUrl.replace(/\/+$/, "");
 
 export async function apiFetch<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const defaultHeaders: Record<string, string> = {
@@ -21,7 +22,11 @@ export async function apiFetch<T>(endpoint: string, options: RequestInit = {}): 
     },
   };
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+  const targetUrl = endpoint.startsWith("/")
+    ? `${API_BASE_URL}${endpoint}`
+    : `${API_BASE_URL}/${endpoint}`;
+
+  const response = await fetch(targetUrl, config);
 
   if (!response.ok) {
     let errorMessage = "Ocurrió un error en la solicitud";

@@ -4,7 +4,7 @@ import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { Button } from '../ui/Button';
 import { DigitalSignature } from '../ui/DigitalSignature';
-import { apiFetch } from '../../lib/api';
+import { apiFetch, API_BASE_URL } from '../../lib/api';
 import { generateUUID } from '../../lib/offlineQueue';
 import { CheckCircle2, AlertTriangle, XCircle, Camera, Upload, ArrowLeft } from 'lucide-react';
 
@@ -64,9 +64,14 @@ export const ChecklistForm: React.FC<ChecklistFormProps> = ({ vehiculos, catalog
       const formData = new FormData();
       formData.append('file', file);
 
-      await fetch(presignedRes.upload_url, {
+      const targetUploadUrl = presignedRes.upload_url.startsWith('http')
+        ? presignedRes.upload_url
+        : `${API_BASE_URL.replace(/\/api$/, '')}${presignedRes.upload_url}`;
+
+      await fetch(targetUploadUrl, {
         method: 'POST',
         body: formData,
+        credentials: 'include',
       });
 
       // 3. Agregar a la lista de evidencias

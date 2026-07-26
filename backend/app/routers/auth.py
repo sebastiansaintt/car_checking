@@ -10,9 +10,8 @@ from app.schemas.usuario import UsuarioLogin, UsuarioResponse
 from app.services.auth import AuthService
 from app.models.usuario import Usuario
 from slowapi import Limiter
-from slowapi.util import get_remote_address
 
-limiter = Limiter(key_func=get_remote_address)
+limiter = Limiter(key_func=get_client_ip)
 router = APIRouter(prefix="/auth", tags=["Autenticación"])
 
 @router.post("/login", response_model=UsuarioResponse)
@@ -25,8 +24,8 @@ def login(
 ):
     """
     Inicia sesión de usuario, genera un token de acceso JWT y lo
-    guarda en una cookie HTTPOnly + Secure + SameSite=Strict.
-    Soporta Rate Limiting (máximo 5 intentos por minuto por IP).
+    guarda en una cookie HTTPOnly + Secure + SameSite=Strict/None.
+    Soporta Rate Limiting (máximo 5 intentos por minuto por IP real).
     """
     # Obtener la IP del cliente considerando proxies
     ip = get_client_ip(request)
@@ -66,7 +65,7 @@ def logout(
     Cierra la sesión del usuario, blacklistea el token JWT en Redis
     y remueve la cookie de autenticación del navegador.
     """
-    ip = request.client.host if request.client else "unknown"
+    ip = get_client_ip(request)
     token = request.cookies.get("access_token")
 
     if token:
