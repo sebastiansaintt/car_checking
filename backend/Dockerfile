@@ -17,5 +17,5 @@ COPY . .
 
 EXPOSE 8000
 
-# Producci\u00f3n: aplica migraciones y arranca sin --reload
-CMD ["sh", "-c", "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2"]
+# Producción: aplica migraciones, siembra datos de inicio y arranca sin --reload
+CMD ["sh", "-c", "alembic upgrade head && python -m app.db.seed && uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2"]
