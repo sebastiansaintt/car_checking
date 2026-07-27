@@ -81,8 +81,27 @@ export const LoginPage: React.FC = () => {
           </div>
         </form>
 
-        <div className="border-t border-border pt-4 text-center">
-          <p className="text-[11px] text-secondary-tertiary">
+        <div className="border-t border-border pt-4 space-y-3">
+          <div className="bg-surface-subtle p-3 rounded-lg border border-border text-xs text-secondary-text space-y-1.5">
+            <p className="font-semibold text-primary">Credenciales Demo (haz clic para autocompletar):</p>
+            <button
+              type="button"
+              onClick={() => { setEmail('coordinador@carchecking.com'); setPassword('coord123'); }}
+              className="w-full flex justify-between items-center p-1.5 rounded hover:bg-gray-100 transition-colors text-left font-mono text-[11px]"
+            >
+              <span className="font-sans font-medium text-primary">Coordinador:</span>
+              <span className="text-brand font-semibold">coordinador@carchecking.com / coord123</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => { setEmail('gerente@carchecking.com'); setPassword('gerente123'); }}
+              className="w-full flex justify-between items-center p-1.5 rounded hover:bg-gray-100 transition-colors text-left font-mono text-[11px]"
+            >
+              <span className="font-sans font-medium text-primary">Gerente:</span>
+              <span className="text-brand font-semibold">gerente@carchecking.com / gerente123</span>
+            </button>
+          </div>
+          <p className="text-[11px] text-secondary-tertiary text-center">
             Car Check v2.0 — Desarrollado para gestión eficiente de flota
           </p>
         </div>
