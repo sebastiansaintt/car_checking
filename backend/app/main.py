@@ -15,6 +15,15 @@ os.makedirs("static/uploads", exist_ok=True)
 # Configurar Rate Limiter usando la IP real del cliente (tras proxies de Render)
 limiter = Limiter(key_func=get_client_ip, default_limits=["100/minute"])
 app = FastAPI(title="Sistema de Inspección de Flota API", version="1.0.0")
+
+from fastapi.responses import JSONResponse
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    import logging
+    logging.getLogger("uvicorn.error").exception("Error no controlado")
+    return JSONResponse(status_code=500, content={"detail": "Error interno del servidor. Intente nuevamente."})
+
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 

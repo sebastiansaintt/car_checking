@@ -1,6 +1,10 @@
+import logging
 from fastapi import Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 import redis
+
+logger = logging.getLogger("uvicorn.error")
+
 from app.core.database import get_db
 from app.core.redis_client import get_redis
 from app.core.security import decode_access_token
@@ -46,7 +50,12 @@ def get_current_user(
         )
 
     # Verificar si el jti está en la blacklist de Redis
-    is_blacklisted = redis_client.get(f"blacklist:{jti}")
+    try:
+        is_blacklisted = redis_client.get(f"blacklist:{jti}")
+    except redis.RedisError as e:
+        logger.warning(f"Error al verificar blacklist en Redis: {e}")
+        is_blacklisted = None
+
     if is_blacklisted:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
