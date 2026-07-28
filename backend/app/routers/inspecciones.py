@@ -2,11 +2,15 @@ import os
 import uuid
 import json
 import shutil
+import logging
 from typing import Optional
 from datetime import datetime
 from fastapi import APIRouter, Depends, Header, HTTPException, status, Request, File, UploadFile
 from sqlalchemy.orm import Session
 import redis
+
+logger = logging.getLogger("uvicorn.error")
+
 
 from app.core.database import get_db
 from app.core.redis_client import get_redis
@@ -74,7 +78,12 @@ def create_inspeccion(
     """
     if x_idempotency_key:
         # Verificar si la clave de idempotencia existe en Redis
-        cached_res = redis_client.get(f"idempotency:{x_idempotency_key}")
+        cached_res = None
+        try:
+            cached_res = redis_client.get(f"idempotency:{x_idempotency_key}")
+        except redis.RedisError as e:
+            logger.warning(f"Error al leer idempotencia de Redis: {e}")
+
         if cached_res:
             try:
                 # Retornar la respuesta cacheada
@@ -95,11 +104,14 @@ def create_inspeccion(
 
     if x_idempotency_key:
         # Guardar en Redis por 5 minutos (300 segundos) para prevenir reintentos
-        redis_client.setex(
-            f"idempotency:{x_idempotency_key}", 
-            300, 
-            json.dumps(res_obj)
-        )
+        try:
+            redis_client.setex(
+                f"idempotency:{x_idempotency_key}", 
+                300, 
+                json.dumps(res_obj)
+            )
+        except redis.RedisError as e:
+            logger.warning(f"Error al guardar idempotencia en Redis: {e}")
 
     return res_obj
 
