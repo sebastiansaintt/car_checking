@@ -42,25 +42,24 @@ export const LoginPage: React.FC = () => {
       {/* Prompt PWA */}
       <InstallPrompt />
 
-      <div className="w-full max-w-md bg-white border border-border rounded-card p-8 shadow-2xl space-y-6">
+      <div className="w-full max-w-xs bg-white border border-border rounded-card p-8 shadow-2xl space-y-6">
         <div className="flex flex-col items-center text-center space-y-2">
-          <div className="w-14 h-14 bg-brand text-white rounded-card flex items-center justify-center shadow-md">
-            <Car className="w-8 h-8" />
+          <div className="w-10 h-10 bg-brand text-white rounded-card flex items-center justify-center shadow-md">
+            <Car className="w-6 h-6" />
           </div>
-          <div className="space-y-0.5">
-            <h1 className="text-2xl font-black text-primary tracking-tight">Car Check</h1>
-            <p className="text-xs font-semibold text-brand uppercase tracking-wider">Control & Inspección de Flota</p>
+          <div className="space-y-0">
+            <h1 className="text-xl font-black text-primary tracking-tight">Car Check</h1>
           </div>
           <p className="text-xs text-secondary-text pt-1">
-            Ingrese sus credenciales corporativas para acceder a la plataforma
+            Ingrese sus credenciales asignadas
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-2">
           <Input
             label="Correo Electrónico"
             type="email"
-            placeholder="usuario@carcheck.com"
+            placeholder="johndoe@email.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
@@ -83,7 +82,7 @@ export const LoginPage: React.FC = () => {
 
         <div className="border-t border-border pt-4">
           <p className="text-[11px] text-secondary-tertiary text-center">
-            Car Check v2.0 — Desarrollado para gestión eficiente de flota
+            Desarrollado para gestión eficiente de flota - v2.0
           </p>
         </div>
       </div>
