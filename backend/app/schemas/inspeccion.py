@@ -132,6 +132,9 @@ class InspeccionUpdate(BaseModel):
     kilometraje: Optional[int] = Field(None, ge=0)
     mantenimiento_recomendado: Optional[str] = None
     observaciones: Optional[str] = None
+    checklist_items: Optional[List[ChecklistItemCreate]] = None
+    evidencias: Optional[List[EvidenciaFotograficaCreate]] = None
+
 
 class InspeccionAprobarRequest(BaseModel):
     firma_url: str = Field(..., description="Firma digital del Jefe de Inspección al aprobar")

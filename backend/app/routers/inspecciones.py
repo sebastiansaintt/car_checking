@@ -140,6 +140,24 @@ def create_inspeccion(
 
     return res_obj
 
+@router.put("/{id}/corregir", response_model=InspeccionResponse)
+def corregir_inspeccion(
+    id: uuid.UUID,
+    data: InspeccionUpdate,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(require_role(["tecnico_inspector", "coordinador", "administrador"]))
+):
+    """
+    Edita la inspección existente tras verificar corrección física de hallazgos.
+    Actualiza ítems, incrementa número de revisión, atiende hallazgos y audita la corrección con el decorador.
+    """
+    return InspeccionService.corregir_inspeccion(
+        db=db,
+        tecnico=current_user,
+        inspeccion_id=id,
+        data=data
+    )
+
 @router.post("/{id}/aprobar", response_model=InspeccionResponse)
 def aprobar_inspeccion(
     id: uuid.UUID,

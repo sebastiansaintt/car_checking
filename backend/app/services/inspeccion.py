@@ -1,4 +1,5 @@
 import uuid
+from functools import wraps
 from datetime import datetime, date, timedelta, timezone
 from typing import Optional, List
 from fastapi import HTTPException, status
@@ -23,7 +24,8 @@ from app.domain.inspeccion.calculador_dictamen import (
     ItemEvaluacion,
     EvaluacionSistemaResultado,
     DICTAMEN_APROBADO,
-    DICTAMEN_CON_HALLAZGOS
+    DICTAMEN_CON_HALLAZGOS,
+    RESULTADO_SISTEMA_APROBADO
 )
 from app.domain.inspeccion.maquina_estado import (
     MaquinaEstadoInspeccion,
@@ -33,6 +35,45 @@ from app.domain.inspeccion.maquina_estado import (
 from app.domain.inspeccion.gestor_sello import GestorSelloAprobacion
 from app.domain.inspeccion.generador_numero import GeneradorNumeroInspeccion
 
+
+def auditar_correccion_inspeccion(func):
+    """
+    Decorador para auditar y notificar cuando una inspección es corregida y sus hallazgos son resueltos
+    en la misma planilla.
+    """
+    @wraps(func)
+    def wrapper(db: Session, tecnico: Usuario, inspeccion_id: uuid.UUID, *args, **kwargs):
+        resultado: Inspeccion = func(db, tecnico, inspeccion_id, *args, **kwargs)
+        
+        # Registrar auditoría formal del proceso de corrección
+        AuditLogRepository.create_log(
+            db=db,
+            usuario_id=tecnico.id,
+            accion="corregir_reporte_inspeccion",
+            entidad="inspeccion",
+            entidad_id=str(resultado.id),
+            ip="system",
+            detalle={
+                "numero_inspeccion": resultado.numero_inspeccion,
+                "numero_revision": resultado.numero_revision,
+                "dictamen_general": resultado.resultado_general,
+                "estado": resultado.estado,
+                "mensaje": f"Primer reporte de inspección N° {resultado.numero_inspeccion} corregido con éxito en revisión N° {resultado.numero_revision}. Todos los sistemas evaluados en E o N/A. Dictamen: {resultado.resultado_general.upper()}."
+            }
+        )
+
+        # Notificar in-app al Jefe de Inspección
+        NotificacionService.notificar_por_rol(
+            db=db,
+            rol="jefe_inspeccion",
+            tipo="inspeccion_corregida",
+            titulo=f"🛠️ Inspección N°{resultado.numero_inspeccion} Corregida (Revisión N°{resultado.numero_revision})",
+            mensaje=f"Técnico {tecnico.nombre} verificó correcciones del vehículo {resultado.vehiculo.patente if resultado.vehiculo else 'N/A'}. Todos los sistemas evaluados en E o N/A.",
+            referencia_id=str(resultado.id),
+            referencia_tipo="inspeccion"
+        )
+        return resultado
+    return wrapper
 
 
 class InspeccionService:
@@ -71,7 +112,7 @@ class InspeccionService:
             )
 
         # 3. Procesar catálogo de ítems y agrupar por sistema
-        sistemas_map = {}  # sistema_id -> list of ItemEvaluacion
+        sistemas_map = {}
         checklist_items = []
         catalog_map = {}
 
@@ -91,7 +132,6 @@ class InspeccionService:
             checklist_items.append(check_item)
             catalog_map[item_in.catalogo_id] = check_item
 
-            # Agrupar para cálculo de dominio por sistema
             sys_id = str(cat_item.sistema_id) if cat_item.sistema_id else "general"
             item_domain = ItemEvaluacion(
                 catalogo_id=str(item_in.catalogo_id),
@@ -128,13 +168,13 @@ class InspeccionService:
 
         dictamen_general = CalculadorDictamen.calcular_dictamen_general(evaluaciones_resultados_domain)
         
-        # Determinar estado inicial con la máquina de estados
         evento_inicial = EventoInspeccion.CREAR_CON_HALLAZGOS if dictamen_general == DICTAMEN_CON_HALLAZGOS else EventoInspeccion.CREAR_SIN_HALLAZGOS
         estado_inicial = MaquinaEstadoInspeccion.transicionar(EstadoInspeccion.EN_REVISION.value, evento_inicial.value)
 
         # 5. Crear la entidad Inspección
         inspeccion = Inspeccion(
             numero_inspeccion=GeneradorNumeroInspeccion.obtener_siguiente_numero(db),
+            numero_revision=1,
             vehiculo_id=vehiculo.id,
             empresa_contratista_id=data.empresa_contratista_id or vehiculo.empresa_contratista_id,
             creado_por_id=tecnico.id,
@@ -162,7 +202,7 @@ class InspeccionService:
                     evidencia.checklist_item = matched_item
             evidencias.append(evidencia)
 
-        # 7. Persistir inspección, evaluaciones, checklist y evidencias atómicamente
+        # 7. Persistir inspección
         inspeccion = InspeccionRepository.create_inspeccion(
             db=db,
             inspeccion=inspeccion,
@@ -235,6 +275,90 @@ class InspeccionService:
         return InspeccionRepository.get_by_id(db, inspeccion.id)
 
     @staticmethod
+    @auditar_correccion_inspeccion
+    def corregir_inspeccion(
+        db: Session,
+        tecnico: Usuario,
+        inspeccion_id: uuid.UUID,
+        data: InspeccionUpdate
+    ) -> Inspeccion:
+        """
+        Re-inspección en la MISMA planilla:
+        El técnico verifica físicamente que el conductor corrigió los hallazgos fuera del sistema,
+        edita el reporte original actualizando los ítems a 'estandar' o 'na', incrementa `numero_revision` a 2,
+        marca los hallazgos como atendidos y el decorador audita que el primer reporte fue corregido con éxito.
+        """
+        inspeccion = InspeccionRepository.get_by_id(db, inspeccion_id)
+        if not inspeccion:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="La inspección a corregir no existe."
+            )
+
+        # 1. Actualizar ítems del checklist si fueron proporcionados
+        if data.checklist_items:
+            for item_in in data.checklist_items:
+                # Buscar el ítem en la inspección
+                for item_db in inspeccion.checklist_items:
+                    if item_db.catalogo_id == item_in.catalogo_id:
+                        item_db.valor = item_in.valor
+                        if item_in.comentario is not None:
+                            item_db.comentario = item_in.comentario
+                        db.add(item_db)
+
+        # 2. Marcar todos los hallazgos de la inspección como atendidos
+        hallazgos = HallazgoRepository.get_by_inspeccion(db, inspeccion.id)
+        for h in hallazgos:
+            HallazgoRepository.marcar_atendido(db, h)
+
+        # 3. Recalcular dictamen por sistema y general con el Dominio
+        sistemas_map = {}
+        for item_db in inspeccion.checklist_items:
+            cat_item = item_db.catalogo
+            sys_id = str(cat_item.sistema_id) if cat_item and cat_item.sistema_id else "general"
+            item_domain = ItemEvaluacion(
+                catalogo_id=str(item_db.catalogo_id),
+                valor=item_db.valor,
+                comentario=item_db.comentario or ""
+            )
+            if sys_id not in sistemas_map:
+                sistemas_map[sys_id] = []
+            sistemas_map[sys_id].append(item_domain)
+
+        evaluaciones_resultados_domain = []
+        for eval_model in inspeccion.evaluaciones_sistema:
+            sys_id_str = str(eval_model.sistema_id)
+            items_sys = sistemas_map.get(sys_id_str, [])
+            nuevo_estado_sys = CalculadorDictamen.calcular_estado_sistema(items_sys)
+            eval_model.estado_sistema = nuevo_estado_sys
+            db.add(eval_model)
+
+            evaluaciones_resultados_domain.append(
+                EvaluacionSistemaResultado(
+                    sistema_id=sys_id_str,
+                    nombre_sistema=eval_model.sistema.nombre if eval_model.sistema else "Sistema",
+                    estado_sistema=nuevo_estado_sys,
+                    items=items_sys
+                )
+            )
+
+        nuevo_dictamen_general = CalculadorDictamen.calcular_dictamen_general(evaluaciones_resultados_domain)
+        inspeccion.resultado_general = nuevo_dictamen_general
+        inspeccion.numero_revision += 1  # Incrementa número de revisión en la misma planilla
+
+        # Transicionar estado usando la máquina de estados
+        inspeccion.estado = MaquinaEstadoInspeccion.transicionar(
+            inspeccion.estado,
+            EventoInspeccion.CORREGIR_HALLAZGOS.value
+        )
+
+        if data.observaciones:
+            inspeccion.observaciones = f"{inspeccion.observaciones or ''}\n[Revisión N°{inspeccion.numero_revision}]: {data.observaciones}".strip()
+
+        InspeccionRepository.save(db, inspeccion)
+        return InspeccionRepository.get_by_id(db, inspeccion.id)
+
+    @staticmethod
     def aprobar_inspeccion(
         db: Session,
         jefe: Usuario,
@@ -252,7 +376,6 @@ class InspeccionService:
                 detail="La inspección seleccionada no existe."
             )
 
-        # Verificar hallazgos pendientes
         hallazgos_pendientes = HallazgoRepository.get_pendientes_by_inspeccion(db, inspeccion.id)
         if not MaquinaEstadoInspeccion.puede_aprobar(inspeccion.estado, len(hallazgos_pendientes)):
             raise HTTPException(
@@ -260,16 +383,12 @@ class InspeccionService:
                 detail=f"No se puede aprobar la inspección. Debe estar en 'pendiente_aprobacion' y no tener hallazgos sin atender. Hallazgos pendientes: {len(hallazgos_pendientes)}."
             )
 
-        # Transicionar estado a 'aprobado'
         nuevo_estado = MaquinaEstadoInspeccion.transicionar(inspeccion.estado, EventoInspeccion.APROBAR.value)
         inspeccion.estado = nuevo_estado
         inspeccion.fecha_aprobacion = datetime.now(timezone.utc)
         inspeccion.aprobado_por_id = jefe.id
-
-        # Calcular fecha próxima revisión (+ 6 meses) (RN-13)
         inspeccion.fecha_proxima_revision = date.today() + timedelta(days=180)
 
-        # Registrar firma del jefe (RN-10)
         FirmaTecnicoRepository.registrar_firma_aprobador(
             db=db,
             inspeccion_id=inspeccion.id,
@@ -277,7 +396,6 @@ class InspeccionService:
             firma_url=data.firma_url
         )
 
-        # Generar Sello Digital de Aprobación (RN-12 / ADJ-02)
         sello = GestorSelloAprobacion.generar_sello(
             numero_inspeccion=inspeccion.numero_inspeccion,
             fecha_creacion=inspeccion.fecha,
@@ -289,7 +407,6 @@ class InspeccionService:
 
         InspeccionRepository.save(db, inspeccion)
 
-        # Notificar al técnico responsable
         NotificacionService.notificar_por_rol(
             db=db,
             rol="tecnico_inspector",
@@ -303,79 +420,11 @@ class InspeccionService:
         return InspeccionRepository.get_by_id(db, inspeccion.id)
 
     @staticmethod
-    def solicitar_segunda_revision(
-        db: Session,
-        jefe: Usuario,
-        inspeccion_id: uuid.UUID,
-        observaciones: Optional[str] = None
-    ) -> Inspeccion:
-        """
-        RN-08 / D-01: Solicita una segunda revisión. Crea una NUEVA entidad Inspeccion
-        referenciando a la inspección original (`inspeccion_previa_id`), incrementando
-        el número de revisión a 2 y manteniendo la inspección original intacta como historial.
-        """
-        original = InspeccionRepository.get_by_id(db, inspeccion_id)
-        if not original:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="La inspección original no existe."
-            )
-
-        # Marcar la inspección original como 'segunda_revision_solicitada'
-        nuevo_estado_original = MaquinaEstadoInspeccion.transicionar(
-            original.estado,
-            EventoInspeccion.SOLICITAR_SEGUNDA_REVISION.value
-        )
-        original.estado = nuevo_estado_original
-        InspeccionRepository.save(db, original)
-
-        # Crear la NUEVA inspección para la segunda revisión (con inspeccion_previa_id)
-        nueva_revision = Inspeccion(
-            numero_inspeccion=GeneradorNumeroInspeccion.obtener_siguiente_numero(db),
-            numero_revision=original.numero_revision + 1,
-            inspeccion_previa_id=original.id,
-            vehiculo_id=original.vehiculo_id,
-            empresa_contratista_id=original.empresa_contratista_id,
-            creado_por_id=original.creado_por_id,
-            fecha=datetime.now(timezone.utc),
-            kilometraje=original.kilometraje,
-            area_transitar=original.area_transitar,
-            equipo_auxiliar=original.equipo_auxiliar,
-            estado=EstadoInspeccion.EN_REVISION.value,
-            resultado_general=DICTAMEN_CON_HALLAZGOS,
-            observaciones=f"Segunda Revisión solicitada por {jefe.nombre}. Motivo: {observaciones or 'Atención de hallazgos previos'}"
-        )
-        db.add(nueva_revision)
-        db.commit()
-        db.refresh(nueva_revision)
-
-        # Audit log
-        AuditLogRepository.create_log(
-            db=db,
-            usuario_id=jefe.id,
-            accion="segunda_revision",
-            entidad="inspeccion",
-            entidad_id=str(nueva_revision.id),
-            ip="system",
-            detalle={
-                "inspeccion_original_id": str(original.id),
-                "nueva_inspeccion_id": str(nueva_revision.id),
-                "numero_revision": nueva_revision.numero_revision
-            }
-        )
-
-        return InspeccionRepository.get_by_id(db, nueva_revision.id)
-
-    @staticmethod
     def marcar_hallazgo_atendido(
         db: Session,
         usuario: Usuario,
         hallazgo_id: uuid.UUID
     ) -> Hallazgo:
-        """
-        RN-06: Marca un hallazgo como atendido. Si todos los hallazgos de esa inspección
-        fueron atendidos, transiciona automáticamente el estado de la inspección a 'pendiente_aprobacion'.
-        """
         hallazgo = HallazgoRepository.get_by_id(db, hallazgo_id)
         if not hallazgo:
             raise HTTPException(
@@ -385,7 +434,6 @@ class InspeccionService:
 
         hallazgo = HallazgoRepository.marcar_atendido(db, hallazgo)
         
-        # Verificar si quedan hallazgos pendientes en esta inspección
         pendientes = HallazgoRepository.get_pendientes_by_inspeccion(db, hallazgo.inspeccion_id)
         if len(pendientes) == 0:
             inspeccion = InspeccionRepository.get_by_id(db, hallazgo.inspeccion_id)

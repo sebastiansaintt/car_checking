@@ -1,7 +1,7 @@
 import React from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { LoginPage } from './pages/LoginPage';
-import { CoordinadorDashboard } from './pages/CoordinadorDashboard';
+import { TecnicoInspectorDashboard } from './pages/TecnicoInspectorDashboard';
 import { GerenteDashboard } from './pages/GerenteDashboard';
 
 const NavigationHandler: React.FC = () => {
@@ -9,10 +9,10 @@ const NavigationHandler: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-surface-subtle">
+      <div className="min-h-screen flex items-center justify-center bg-slate-900 text-white">
         <div className="text-center space-y-3">
-          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="text-xs font-medium text-secondary-text">Cargando aplicación...</p>
+          <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p className="text-xs font-semibold text-slate-400">Cargando Sistema de Inspección Sointer Ltda...</p>
         </div>
       </div>
     );
@@ -22,8 +22,8 @@ const NavigationHandler: React.FC = () => {
     return <LoginPage />;
   }
 
-  if (user.rol === 'coordinador') {
-    return <CoordinadorDashboard />;
+  if (user.rol === 'tecnico_inspector' || user.rol === 'coordinador') {
+    return <TecnicoInspectorDashboard />;
   }
 
   return <GerenteDashboard />;

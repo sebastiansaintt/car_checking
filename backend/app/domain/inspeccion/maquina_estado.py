@@ -1,7 +1,7 @@
 """
 Domain Service: MaquinaEstadoInspeccion
 Pure business domain logic — state machine for inspection lifecycle.
-Enforces RN-07, RN-11.
+Enforces RN-07.
 """
 from enum import Enum
 
@@ -9,14 +9,13 @@ class EstadoInspeccion(str, Enum):
     EN_REVISION = "en_revision"
     CON_HALLAZGOS = "con_hallazgos"
     PENDIENTE_APROBACION = "pendiente_aprobacion"
-    SEGUNDA_REVISION_SOLICITADA = "segunda_revision_solicitada"
     APROBADO = "aprobado"
 
 class EventoInspeccion(str, Enum):
     CREAR_SIN_HALLAZGOS = "crear_sin_hallazgos"
     CREAR_CON_HALLAZGOS = "crear_con_hallazgos"
+    CORREGIR_HALLAZGOS = "corregir_hallazgos"
     ATENDER_TODOS_HALLAZGOS = "atender_todos_hallazgos"
-    SOLICITAR_SEGUNDA_REVISION = "solicitar_segunda_revision"
     APROBAR = "aprobar"
     REABRIR = "reabrir"
 
@@ -26,14 +25,13 @@ TRANSICIONES_VALIDAS = {
         EventoInspeccion.CREAR_CON_HALLAZGOS: EstadoInspeccion.CON_HALLAZGOS,
     },
     EstadoInspeccion.CON_HALLAZGOS: {
+        EventoInspeccion.CORREGIR_HALLAZGOS: EstadoInspeccion.PENDIENTE_APROBACION,
         EventoInspeccion.ATENDER_TODOS_HALLAZGOS: EstadoInspeccion.PENDIENTE_APROBACION,
-        EventoInspeccion.SOLICITAR_SEGUNDA_REVISION: EstadoInspeccion.SEGUNDA_REVISION_SOLICITADA,
     },
     EstadoInspeccion.PENDIENTE_APROBACION: {
         EventoInspeccion.APROBAR: EstadoInspeccion.APROBADO,
-        EventoInspeccion.SOLICITAR_SEGUNDA_REVISION: EstadoInspeccion.SEGUNDA_REVISION_SOLICITADA,
+        EventoInspeccion.CORREGIR_HALLAZGOS: EstadoInspeccion.PENDIENTE_APROBACION,
     },
-    EstadoInspeccion.SEGUNDA_REVISION_SOLICITADA: {},  # Estado inmutable (la 2da revisión crea OTRA inspección)
     EstadoInspeccion.APROBADO: {
         EventoInspeccion.REABRIR: EstadoInspeccion.EN_REVISION  # Solo admin
     }
@@ -62,7 +60,7 @@ class MaquinaEstadoInspeccion:
     @staticmethod
     def puede_aprobar(estado_actual: str, hallazgos_pendientes_count: int) -> bool:
         """
-        RN-11: Una inspección solo puede ser aprobada si está en 'pendiente_aprobacion'
+        Una inspección solo puede ser aprobada si está en 'pendiente_aprobacion'
         y no tiene hallazgos pendientes.
         """
         return estado_actual == EstadoInspeccion.PENDIENTE_APROBACION and hallazgos_pendientes_count == 0
@@ -70,6 +68,6 @@ class MaquinaEstadoInspeccion:
     @staticmethod
     def puede_reabrir(usuario_rol: str, estado_actual: str) -> bool:
         """
-        RN-07: Solo el rol 'administrador' puede reabrir una inspección aprobada.
+        Solo el rol 'administrador' puede reabrir una inspección aprobada.
         """
         return usuario_rol == "administrador" and estado_actual == EstadoInspeccion.APROBADO
