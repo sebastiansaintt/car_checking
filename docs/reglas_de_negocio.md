@@ -81,40 +81,13 @@ El sistema digitaliza este proceso garantizando **trazabilidad, seguimiento y ap
 
 ---
 
-### RN-07 · Máquina de Estados de la Inspección
+### RN-07 · Re-inspección y Corrección de Hallazgos en la Misma Planilla
 
-La inspección sigue el siguiente ciclo de vida:
-
-```
-en_revision
-    │
-    ├─── (todos E/NA) ──────────────────► pendiente_aprobacion
-    │                                             │
-    └─── (algún S) ──► con_hallazgos             │ (Jefe aprueba)
-                            │                    ▼
-                            ├─ (hallazgos        aprobado  ◄── (inmutable)
-                            │   atendidos)
-                            │
-                            └─ (segunda revisión solicitada)
-                                        │
-                                        ▼
-                               nueva_inspeccion (RN-08)
-```
-
-- El estado `aprobado` es **inmutable**: solo el `administrador` puede reabrir una inspección aprobada, con registro de auditoría obligatorio.
-- Un vehículo **no puede circular** hasta tener una inspección en estado `aprobado`.
-
----
-
-### RN-08 · Segunda Revisión (Re-inspección)
-
-- Si la primera inspección tiene hallazgos no resolubles in situ, el Jefe de Inspección puede solicitar una **segunda revisión**.
-- La segunda revisión genera una **nueva entidad `Inspeccion`** con:
-  - `numero_revision = 2`
-  - `inspeccion_previa_id` referenciando a la inspección original
-  - Un nuevo número de inspección correlativo
-- La inspección original **no se modifica**: queda como registro histórico (auditabilidad).
-- La planilla física indica: *"El servicio contempla un segundo chequeo. Si en el primero los resultados no fueron satisfactorios."*
+- Cuando un vehículo resulta **CON HALLAZGOS**, el conductor realiza las correcciones físicas fuera del sistema.
+- Al regresar, el técnico verifica físicamente las correcciones y **edita la misma inspección original**.
+- No se crea un nuevo registro en la base de datos: se actualiza el estado de los ítems de `S` (Subestándar) a `E` (Estándar) o `N/A`, y se incrementa `numero_revision` (ej. revisión 2).
+- El dominio recalculó los dictámenes por sistema: una vez que todos los sistemas quedan en `E` o `N/A`, la inspección pasa a estado `pendiente_aprobacion` para la firma del Jefe.
+- Un **decorador / registrador de auditoría** audita expresamente este proceso, dejando constancia de que la inspección N° X fue corregida con éxito en la segunda revisión.
 
 ---
 
