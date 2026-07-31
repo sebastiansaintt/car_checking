@@ -31,3 +31,9 @@ dist-ssr/
 Thumbs.db
 Desktop.ini
 .DS_Store
+
+# Excluded project docs and folders
+arquitectura-sistema-inspeccion-flota.md
+folder/
+design/
+
