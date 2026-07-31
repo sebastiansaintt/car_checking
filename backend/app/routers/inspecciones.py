@@ -3,7 +3,7 @@ import uuid
 import json
 import shutil
 import logging
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 from fastapi import APIRouter, Depends, Header, HTTPException, status, Request, File, UploadFile
 from sqlalchemy.orm import Session
@@ -11,16 +11,20 @@ import redis
 
 logger = logging.getLogger("uvicorn.error")
 
-
 from app.core.database import get_db
 from app.core.redis_client import get_redis
 from app.deps import get_current_user, require_role
 from app.models.usuario import Usuario
 from app.schemas.inspeccion import (
+    CatalogoSistemaResponse,
     CatalogoChecklistResponse,
     InspeccionCreate,
     InspeccionUpdate,
     InspeccionResponse,
+    InspeccionAprobarRequest,
+    SegundaRevisionRequest,
+    HallazgoResponse,
+    HallazgoUpdate,
     PresignedUrlRequest,
     PresignedUrlResponse
 )
@@ -29,40 +33,66 @@ from app.repositories.inspeccion import InspeccionRepository
 
 router = APIRouter(prefix="/inspecciones", tags=["Inspecciones"])
 
-# Directorio de subidas estáticas local para simular S3
 UPLOAD_DIR = "static/uploads"
 
-@router.get("/checklist-catalog", response_model=list[CatalogoChecklistResponse])
+@router.get("/sistemas-catalog", response_model=List[CatalogoSistemaResponse])
+def get_sistemas_catalog(
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user)
+):
+    """Retorna los 9 sistemas maestros del catálogo."""
+    return InspeccionRepository.get_sistemas_catalog(db)
+
+@router.get("/checklist-catalog", response_model=List[CatalogoChecklistResponse])
 def get_checklist_catalog(
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_user)
 ):
-    """Retorna la lista de ítems maestros del checklist."""
+    """Retorna los ítems maestros del checklist."""
     return InspeccionRepository.get_checklist_catalog(db)
 
-@router.get("", response_model=list[InspeccionResponse])
+@router.get("", response_model=List[InspeccionResponse])
 def get_inspecciones(
     skip: int = 0,
     limit: int = 100,
     vehiculo_id: Optional[uuid.UUID] = None,
+    empresa_contratista_id: Optional[uuid.UUID] = None,
     coordinador_id: Optional[uuid.UUID] = None,
+    estado: Optional[str] = None,
     resultado_general: Optional[str] = None,
     fecha_inicio: Optional[datetime] = None,
     fecha_fin: Optional[datetime] = None,
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_user)
 ):
-    """Lista los reportes de inspección activos (no eliminados) aplicando filtros opcionales. Acceso para ambos roles."""
+    """Lista las inspecciones activas aplicando filtros opcionales."""
     return InspeccionService.list_inspecciones(
         db=db,
         skip=skip,
         limit=limit,
         vehiculo_id=vehiculo_id,
+        empresa_contratista_id=empresa_contratista_id,
         coordinador_id=coordinador_id,
+        estado=estado,
         resultado_general=resultado_general,
         fecha_inicio=fecha_inicio,
         fecha_fin=fecha_fin
     )
+
+@router.get("/{id}", response_model=InspeccionResponse)
+def get_inspeccion_by_id(
+    id: uuid.UUID,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user)
+):
+    """Obtiene el detalle completo de una inspección por ID."""
+    inspeccion = InspeccionRepository.get_by_id(db, id)
+    if not inspeccion:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="La inspección seleccionada no existe."
+        )
+    return inspeccion
 
 @router.post("", response_model=InspeccionResponse, status_code=status.HTTP_201_CREATED)
 def create_inspeccion(
@@ -70,14 +100,14 @@ def create_inspeccion(
     x_idempotency_key: Optional[str] = Header(None, alias="X-Idempotency-Key"),
     db: Session = Depends(get_db),
     redis_client: redis.Redis = Depends(get_redis),
-    current_user: Usuario = Depends(require_role(["coordinador"])) # Regla no negociable: Validar rol en el backend
+    current_user: Usuario = Depends(require_role(["tecnico_inspector", "coordinador", "administrador"]))
 ):
     """
-    Crea un reporte de inspección. Requiere rol 'coordinador'.
-    Soporta Idempotency Key en cabeceras para evitar duplicidad de envíos.
+    Crea una nueva inspección técnica.
+    Requiere rol 'tecnico_inspector' (o legacy 'coordinador').
+    Soporta X-Idempotency-Key para prevenir duplicados en envíos offline/PWA.
     """
     if x_idempotency_key:
-        # Verificar si la clave de idempotencia existe en Redis
         cached_res = None
         try:
             cached_res = redis_client.get(f"idempotency:{x_idempotency_key}")
@@ -86,28 +116,23 @@ def create_inspeccion(
 
         if cached_res:
             try:
-                # Retornar la respuesta cacheada
                 return json.loads(cached_res)
             except Exception:
                 pass
 
-    # Crear inspección usando el servicio de negocio
     inspeccion = InspeccionService.create_inspeccion(
         db=db,
-        coordinador=current_user,
+        tecnico=current_user,
         data=data
     )
 
-    # Serializar la respuesta para la validación y el caché de idempotencia
-    # Usamos Pydantic para asegurar que la respuesta calza con el esquema esperado
     res_obj = InspeccionResponse.model_validate(inspeccion).model_dump(mode="json")
 
     if x_idempotency_key:
-        # Guardar en Redis por 5 minutos (300 segundos) para prevenir reintentos
         try:
             redis_client.setex(
-                f"idempotency:{x_idempotency_key}", 
-                300, 
+                f"idempotency:{x_idempotency_key}",
+                300,
                 json.dumps(res_obj)
             )
         except redis.RedisError as e:
@@ -115,22 +140,59 @@ def create_inspeccion(
 
     return res_obj
 
-@router.put("/{id}", response_model=InspeccionResponse)
-def update_inspeccion(
+@router.post("/{id}/aprobar", response_model=InspeccionResponse)
+def aprobar_inspeccion(
     id: uuid.UUID,
-    data: InspeccionUpdate,
-    request: Request,
+    data: InspeccionAprobarRequest,
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(require_role(["coordinador"])) # Regla no negociable: Validar rol en el backend
+    current_user: Usuario = Depends(require_role(["jefe_inspeccion", "gerente", "administrador"]))
 ):
-    """Edita un reporte de inspección existente. Requiere rol 'coordinador'."""
-    ip = request.client.host if request.client else "unknown"
-    return InspeccionService.update_inspeccion(
+    """
+    RN-11 / ADJ-02: Emite la aprobación final de la inspección.
+    Genera el sello digital de Sointer Ltda. y calcula la fecha de próxima revisión.
+    Requiere rol 'jefe_inspeccion' (o legacy 'gerente').
+    """
+    return InspeccionService.aprobar_inspeccion(
         db=db,
-        coordinador=current_user,
+        jefe=current_user,
         inspeccion_id=id,
-        data=data,
-        ip=ip
+        data=data
+    )
+
+@router.post("/{id}/segunda-revision", response_model=InspeccionResponse)
+def solicitar_segunda_revision(
+    id: uuid.UUID,
+    req: SegundaRevisionRequest,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(require_role(["jefe_inspeccion", "gerente", "administrador"]))
+):
+    """
+    RN-08 / D-01: Solicita una segunda revisión.
+    Crea una NUEVA entidad Inspeccion vinculada a la anterior (`inspeccion_previa_id`).
+    Requiere rol 'jefe_inspeccion'.
+    """
+    return InspeccionService.solicitar_segunda_revision(
+        db=db,
+        jefe=current_user,
+        inspeccion_id=id,
+        observaciones=req.observaciones
+    )
+
+@router.patch("/hallazgos/{hallazgo_id}/atender", response_model=HallazgoResponse)
+def marcar_hallazgo_atendido(
+    hallazgo_id: uuid.UUID,
+    req: HallazgoUpdate,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(require_role(["tecnico_inspector", "coordinador", "jefe_inspeccion", "gerente", "administrador"]))
+):
+    """
+    RN-06: Marca un hallazgo como atendido.
+    Si se atienden todos los hallazgos de la inspección, cambia su estado a 'pendiente_aprobacion'.
+    """
+    return InspeccionService.marcar_hallazgo_atendido(
+        db=db,
+        usuario=current_user,
+        hallazgo_id=hallazgo_id
     )
 
 @router.delete("/{id}", status_code=status.HTTP_200_OK)
@@ -138,9 +200,9 @@ def delete_inspeccion(
     id: uuid.UUID,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(require_role(["coordinador"])) # Regla no negociable: Validar rol en el backend
+    current_user: Usuario = Depends(require_role(["jefe_inspeccion", "gerente", "administrador"]))
 ):
-    """Realiza la eliminación lógica (soft delete) de una inspección. Requiere rol 'coordinador'."""
+    """Realiza el Soft Delete de una inspección."""
     ip = request.client.host if request.client else "unknown"
     InspeccionService.delete_inspeccion(
         db=db,
@@ -150,23 +212,15 @@ def delete_inspeccion(
     )
     return {"message": "Inspección eliminada correctamente."}
 
-# --- ENDPOINTS PARA MOCK DE ALMACENAMIENTO S3 ---
-
+# Mock presigned URL endpoints
 @router.post("/presigned-url", response_model=PresignedUrlResponse)
 def get_presigned_url(
     req: PresignedUrlRequest,
     current_user: Usuario = Depends(get_current_user)
 ):
-    """
-    Simula la generación de una URL firmada de S3/R2.
-    Retorna la URL a la que se debe subir el archivo (nuestro endpoint local de mock-upload)
-    y la URL final de descarga que tendrá el archivo.
-    """
-    # Generar un nombre de archivo único
     ext = os.path.splitext(req.filename)[1]
     unique_filename = f"{uuid.uuid4()}{ext}"
 
-    # Retorna URLs locales
     return {
         "upload_url": f"/api/inspecciones/mock-s3-upload?filename={unique_filename}",
         "file_url": f"/static/uploads/{unique_filename}"
@@ -178,13 +232,7 @@ def mock_s3_upload(
     file: UploadFile = File(...),
     current_user: Usuario = Depends(get_current_user)
 ):
-    """
-    Endpoint que simula la subida directa del frontend a S3.
-    Guarda el archivo en el almacenamiento local estático de la API.
-    """
-    # Asegurar que el directorio de destino exista
     os.makedirs(UPLOAD_DIR, exist_ok=True)
-    
     file_path = os.path.join(UPLOAD_DIR, filename)
     try:
         with open(file_path, "wb") as buffer:
