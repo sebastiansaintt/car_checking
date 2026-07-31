@@ -25,7 +25,8 @@ class Inspeccion(Base):
     __tablename__ = "inspecciones"
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    numero_inspeccion: Mapped[int] = mapped_column(Integer, inspeccion_num_seq, server_default=inspeccion_num_seq.next_value(), unique=True, index=True, nullable=False)
+    numero_inspeccion: Mapped[int] = mapped_column(Integer, inspeccion_num_seq, default=4800, unique=True, index=True, nullable=False)
+
     numero_revision: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
     inspeccion_previa_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("inspecciones.id", ondelete="SET NULL"), nullable=True)
     vehiculo_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("vehiculos.id", ondelete="RESTRICT"), nullable=False)

@@ -1,5 +1,5 @@
 import uuid
-from sqlalchemy import String, DateTime, ForeignKey, Index, func
+from sqlalchemy import String, DateTime, ForeignKey, Index, JSON, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from app.core.database import Base
@@ -14,7 +14,7 @@ class AuditLog(Base):
     entidad_id: Mapped[str] = mapped_column(String(255), nullable=True)
     timestamp: Mapped[DateTime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
     ip: Mapped[str] = mapped_column(String(45), nullable=True)  # Soporta IPv4 e IPv6
-    detalle: Mapped[dict] = mapped_column(JSONB, nullable=True)  # Diferencias antes/después
+    detalle: Mapped[dict] = mapped_column(JSON().with_variant(JSONB, "postgresql"), nullable=True)  # Diferencias antes/después
 
     # Relaciones
     usuario = relationship("Usuario", back_populates="audit_logs")
