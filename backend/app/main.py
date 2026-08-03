@@ -7,7 +7,7 @@ from slowapi.errors import RateLimitExceeded
 
 from app.core.middleware import SecurityHeadersMiddleware
 from app.deps import get_client_ip
-from app.routers import auth, vehiculos, inspecciones, empresas_contratistas, export, audit_log, mantenimientos, notificaciones, estadisticas
+from app.routers import auth, vehiculos, inspecciones, empresas_contratistas, usuarios, export, audit_log, mantenimientos, notificaciones, estadisticas
 
 # Asegurar que el directorio de subidas estáticas exista
 os.makedirs("static/uploads", exist_ok=True)
@@ -53,6 +53,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 # Incluir routers
 app.include_router(auth.router, prefix="/api")
 app.include_router(empresas_contratistas.router, prefix="/api")
+app.include_router(usuarios.router, prefix="/api")
 app.include_router(vehiculos.router, prefix="/api")
 app.include_router(inspecciones.router, prefix="/api")
 app.include_router(mantenimientos.router, prefix="/api")
