@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.core.security import hash_password
 from app.models.usuario import Usuario
 from app.schemas.usuario import UsuarioCreate, UsuarioUpdate
+from app.repositories.audit_log import AuditLogRepository
 
 class UsuarioService:
     @staticmethod
@@ -25,7 +26,12 @@ class UsuarioService:
         return db.query(Usuario).filter(Usuario.id == usuario_id).first()
 
     @staticmethod
-    def create_usuario(db: Session, data: UsuarioCreate) -> Usuario:
+    def create_usuario(
+        db: Session,
+        data: UsuarioCreate,
+        admin_usuario: Optional[Usuario] = None,
+        ip: str = "system"
+    ) -> Usuario:
         # Verificar si el email ya existe
         existente = db.query(Usuario).filter(Usuario.email == data.email.lower()).first()
         if existente:
@@ -49,10 +55,28 @@ class UsuarioService:
         db.add(nuevo_usuario)
         db.commit()
         db.refresh(nuevo_usuario)
+
+        if admin_usuario:
+            AuditLogRepository.create_log(
+                db=db,
+                usuario_id=admin_usuario.id,
+                accion="crear",
+                entidad="usuario",
+                entidad_id=str(nuevo_usuario.id),
+                ip=ip,
+                detalle={"nombre": nuevo_usuario.nombre, "email": nuevo_usuario.email, "rol": nuevo_usuario.rol}
+            )
+
         return nuevo_usuario
 
     @staticmethod
-    def update_usuario(db: Session, usuario_id: uuid.UUID, data: UsuarioUpdate) -> Usuario:
+    def update_usuario(
+        db: Session,
+        usuario_id: uuid.UUID,
+        data: UsuarioUpdate,
+        admin_usuario: Optional[Usuario] = None,
+        ip: str = "system"
+    ) -> Usuario:
         usuario = UsuarioService.get_usuario_by_id(db, usuario_id)
         if not usuario:
             raise HTTPException(
@@ -84,4 +108,16 @@ class UsuarioService:
 
         db.commit()
         db.refresh(usuario)
+
+        if admin_usuario:
+            AuditLogRepository.create_log(
+                db=db,
+                usuario_id=admin_usuario.id,
+                accion="editar",
+                entidad="usuario",
+                entidad_id=str(usuario.id),
+                ip=ip,
+                detalle={"nombre": usuario.nombre, "email": usuario.email, "rol": usuario.rol, "activo": usuario.activo}
+            )
+
         return usuario
