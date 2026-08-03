@@ -1,10 +1,10 @@
 import uuid
 from typing import List
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Request, status
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.deps import require_role
+from app.deps import require_role, get_client_ip
 from app.models.usuario import Usuario
 from app.schemas.usuario import UsuarioCreate, UsuarioUpdate, UsuarioResponse
 from app.services.usuario import UsuarioService
@@ -24,19 +24,23 @@ def list_usuarios(
 
 @router.post("", response_model=UsuarioResponse, status_code=status.HTTP_201_CREATED)
 def create_usuario(
+    request: Request,
     data: UsuarioCreate,
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(require_role(["administrador"]))
 ):
     """Crea un nuevo usuario (técnico inspector, jefe de inspección o admin). Exclusivo para 'administrador'."""
-    return UsuarioService.create_usuario(db, data)
+    ip = get_client_ip(request)
+    return UsuarioService.create_usuario(db, data, admin_usuario=current_user, ip=ip)
 
 @router.put("/{id}", response_model=UsuarioResponse)
 def update_usuario(
+    request: Request,
     id: uuid.UUID,
     data: UsuarioUpdate,
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(require_role(["administrador"]))
 ):
     """Actualiza datos, rol o estado activo de un usuario. Exclusivo para 'administrador'."""
-    return UsuarioService.update_usuario(db, id, data)
+    ip = get_client_ip(request)
+    return UsuarioService.update_usuario(db, id, data, admin_usuario=current_user, ip=ip)

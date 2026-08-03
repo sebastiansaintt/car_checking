@@ -37,8 +37,8 @@ services:
       - DATABASE_URL=postgresql://postgres:securepassword123@db:5432/car_checking
       - REDIS_URL=redis://redis:6379/0
       - ENVIRONMENT=development
-    # Override del CMD de producción: restaura --reload para hot-reload en desarrollo local
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    # Override del CMD de producción: ejecuta migraciones y restaura --reload para hot-reload en desarrollo local
+    command: sh -c "alembic upgrade head && python -m app.db.seed && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
     depends_on:
       - db
       - redis
