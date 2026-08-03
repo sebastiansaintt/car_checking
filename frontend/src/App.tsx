@@ -3,6 +3,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { LoginPage } from './pages/LoginPage';
 import { TecnicoInspectorDashboard } from './pages/TecnicoInspectorDashboard';
 import { JefeInspeccionDashboard } from './pages/JefeInspeccionDashboard';
+import { AdministradorDashboard } from './pages/AdministradorDashboard';
 
 const NavigationHandler: React.FC = () => {
   const { user, loading } = useAuth();
@@ -20,6 +21,10 @@ const NavigationHandler: React.FC = () => {
 
   if (!user) {
     return <LoginPage />;
+  }
+
+  if (user.rol === 'administrador') {
+    return <AdministradorDashboard />;
   }
 
   if (user.rol === 'tecnico_inspector' || user.rol === 'coordinador') {
