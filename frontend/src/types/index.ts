@@ -63,6 +63,7 @@ export interface EvaluacionSistema {
   estado_sistema: 'aprobado' | 'no_aprobado' | 'na';
   sistema_nombre?: string;
   sistema_codigo?: string;
+  sistema?: CatalogoSistema;
 }
 
 export interface ChecklistItem {
@@ -91,6 +92,7 @@ export interface FirmaTecnico {
   firma_url?: string;
   es_aprobador: boolean;
   signed_at?: string;
+  usuario?: User;
 }
 
 export interface Evidencia {
@@ -119,8 +121,10 @@ export interface Inspeccion {
   vehiculo_id: string;
   vehiculo_patente?: string;
   vehiculo_modelo?: string;
+  vehiculo?: Vehiculo;
   empresa_contratista_id?: string;
   empresa_contratista_nombre?: string;
+  empresa_contratista?: EmpresaContratista;
   creado_por_id: string;
   creado_por_nombre?: string;
 

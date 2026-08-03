@@ -2,7 +2,7 @@ import React from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { LoginPage } from './pages/LoginPage';
 import { TecnicoInspectorDashboard } from './pages/TecnicoInspectorDashboard';
-import { GerenteDashboard } from './pages/GerenteDashboard';
+import { JefeInspeccionDashboard } from './pages/JefeInspeccionDashboard';
 
 const NavigationHandler: React.FC = () => {
   const { user, loading } = useAuth();
@@ -11,7 +11,7 @@ const NavigationHandler: React.FC = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-900 text-white">
         <div className="text-center space-y-3">
-          <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
           <p className="text-xs font-semibold text-slate-400">Cargando Sistema de Inspección Sointer Ltda...</p>
         </div>
       </div>
@@ -26,7 +26,7 @@ const NavigationHandler: React.FC = () => {
     return <TecnicoInspectorDashboard />;
   }
 
-  return <GerenteDashboard />;
+  return <JefeInspeccionDashboard />;
 };
 
 function App() {
