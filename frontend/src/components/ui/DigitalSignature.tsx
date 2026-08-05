@@ -85,21 +85,21 @@ export const DigitalSignature: React.FC<SignatureProps> = ({ onSave, initialFirm
   return (
     <div className="flex flex-col gap-3">
       {isConfirmed && signaturePreview ? (
-        <div className="p-4 border border-status-apto-border bg-status-apto-bg rounded-input flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="flex items-center gap-2 text-status-apto-text text-xs font-semibold">
-            <CheckCircle className="w-5 h-5 text-emerald-600 shrink-0" />
+        <div className="p-4 border border-[#A7F3D0] bg-[#ECFDF5] rounded-container flex flex-col sm:flex-row items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-[#065F46] text-xs font-semibold">
+            <CheckCircle className="w-5 h-5 shrink-0" />
             <span>Firma Digital Capturada y Confirmada</span>
           </div>
-          <div className="bg-white border border-border p-1.5 rounded-input">
+          <div className="bg-white border border-[#E5E7EB] p-1.5 rounded-input">
             <img src={signaturePreview} alt="Firma Confirmada" className="h-14 object-contain" />
           </div>
-          <Button variant="outline" size="sm" type="button" onClick={handleClear}>
+          <Button variant="secondary" size="sm" type="button" onClick={handleClear}>
             <RotateCcw className="w-3.5 h-3.5" /> Volver a Firmar
           </Button>
         </div>
       ) : (
         <>
-          <div className="border border-border rounded-input overflow-hidden bg-white touch-none">
+          <div className="border border-[#E5E7EB] rounded-input overflow-hidden bg-white touch-none">
             <SignatureCanvas
               ref={sigPad}
               penColor="#111827"
@@ -112,9 +112,9 @@ export const DigitalSignature: React.FC<SignatureProps> = ({ onSave, initialFirm
           </div>
 
           <div className="flex flex-wrap justify-between items-center gap-2">
-            <span className="text-xs text-secondary-text">Trace su firma con el dedo o puntero</span>
+            <span className="text-xs text-[#6B7280]">Trace su firma con el dedo o puntero</span>
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" type="button" onClick={handleClear}>
+              <Button variant="secondary" size="sm" type="button" onClick={handleClear}>
                 <RotateCcw className="w-3.5 h-3.5" /> Limpiar
               </Button>
               <Button

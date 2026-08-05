@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { AlertCircle, CheckCircle2, X } from 'lucide-react';
+import { CheckCircle2, AlertCircle, X } from 'lucide-react';
 
 interface ToastProps {
   message: string | null;
@@ -12,13 +12,11 @@ export const ToastNotification: React.FC<ToastProps> = ({
   message,
   type = 'success',
   onClose,
-  duration = 5000
+  duration = 4500,
 }) => {
   useEffect(() => {
     if (!message) return;
-    const timer = setTimeout(() => {
-      onClose();
-    }, duration);
+    const timer = setTimeout(onClose, duration);
     return () => clearTimeout(timer);
   }, [message, duration, onClose]);
 
@@ -27,26 +25,32 @@ export const ToastNotification: React.FC<ToastProps> = ({
   const isError = type === 'error';
 
   return (
-    <div className="fixed top-5 left-1/2 -translate-x-1/2 z-[9999] max-w-md w-full px-4 animate-in fade-in slide-in-from-top-4 duration-200">
+    <div
+      className="fixed bottom-6 right-6 z-[9999] animate-fade-in"
+      role="alert"
+      aria-live="polite"
+    >
       <div
-        className={`flex items-center justify-between p-3.5 rounded-card border shadow-lg ${
-          isError
-            ? 'bg-status-no_apto-bg border-status-no_apto-border text-status-no_apto-text'
-            : 'bg-status-apto-bg border-status-apto-border text-status-apto-text'
-        }`}
+        className={[
+          'flex items-start gap-3 px-4 py-3',
+          'rounded-card border bg-white shadow-modal',
+          'max-w-sm w-full',
+          isError ? 'border-[#FCA5A5]' : 'border-[#A7F3D0]',
+        ].join(' ')}
       >
-        <div className="flex items-center gap-2.5 text-xs font-medium">
+        <div className="shrink-0 pt-0.5">
           {isError ? (
-            <AlertCircle className="w-4 h-4 shrink-0 text-red-600" />
+            <AlertCircle className="w-4 h-4 text-[#991B1B]" />
           ) : (
-            <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
+            <CheckCircle2 className="w-4 h-4 text-[#065F46]" />
           )}
-          <span>{message}</span>
         </div>
+        <p className="flex-1 text-sm text-[#111827] leading-snug">{message}</p>
         <button
           onClick={onClose}
-          className="p-1 hover:opacity-75 transition-opacity rounded-md text-current"
+          className="shrink-0 p-0.5 rounded text-[#9CA3AF] hover:text-[#111827] hover:bg-[#F3F4F6] transition-colors duration-150"
           type="button"
+          aria-label="Cerrar notificación"
         >
           <X className="w-4 h-4" />
         </button>

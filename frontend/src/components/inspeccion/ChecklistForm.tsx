@@ -3,11 +3,12 @@ import { Vehiculo, CatalogoSistema, CatalogoItem, EmpresaContratista, Inspeccion
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { Button } from '../ui/Button';
+import { Badge } from '../ui/Badge';
 import { DigitalSignature } from '../ui/DigitalSignature';
 import { SistemaChecklist } from './SistemaChecklist';
 import { apiFetch, API_BASE_URL } from '../../lib/api';
 import { generateUUID } from '../../lib/offlineQueue';
-import { Camera, Upload, ArrowLeft, Plus, Trash2, CheckCircle2, AlertOctagon } from 'lucide-react';
+import { Camera, Upload, ArrowLeft, Plus, Trash2 } from 'lucide-react';
 
 interface ChecklistFormProps {
   sistemas: CatalogoSistema[];
@@ -269,60 +270,59 @@ export const ChecklistForm: React.FC<ChecklistFormProps> = ({
   };
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto pb-12">
+    <div className="space-y-6 max-w-4xl pb-12">
       {onCancel && (
         <button
           type="button"
           onClick={onCancel}
-          className="flex items-center gap-2 text-xs font-medium text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-colors"
+          className="flex items-center gap-2 text-xs font-medium text-[#6B7280] hover:text-[#111827] transition-colors duration-150"
         >
           <ArrowLeft className="w-4 h-4" />
           Volver al dashboard
         </button>
       )}
 
-      {/* Banner de Modo */}
-      <div className="bg-slate-900 text-white p-5 rounded-2xl shadow-md flex items-center justify-between">
+      {/* Header editorial */}
+      <div className="flex items-start justify-between gap-4">
         <div>
-          <span className="text-xs uppercase tracking-wider font-semibold text-indigo-400">
-            {isEditingMode ? `Re-inspección · Planilla N° ${initialInspeccionToEdit.numero_inspeccion} (Revisión N° ${initialInspeccionToEdit.numero_revision + 1})` : 'Nueva Inspección Técnica · Formato FO-M4-P13-96'}
-          </span>
-          <h2 className="text-xl font-bold mt-1">
-            {isEditingMode ? 'Corregir y Verificar Hallazgos en la Misma Planilla' : 'Formulario de Inspección de Flota'}
-          </h2>
+          <p className="text-xs text-[#9CA3AF] font-medium mb-1">
+            {isEditingMode
+              ? `Re-inspección · Planilla N° ${initialInspeccionToEdit.numero_inspeccion} (Revisión N° ${initialInspeccionToEdit.numero_revision + 1})`
+              : 'Formato FO-M4-P13-96'}
+          </p>
+          <h1 className="text-base font-semibold text-[#111827]">
+            {isEditingMode ? 'Corregir y Verificar Hallazgos' : 'Nueva Inspección Técnica'}
+          </h1>
+          <p className="text-sm text-[#6B7280] mt-0.5">
+            {isEditingMode
+              ? 'Corrija los hallazgos subestándar en la misma planilla.'
+              : 'Formulario de inspección de flota vehicular.'}
+          </p>
         </div>
 
-        {/* Status Badge Live */}
-        <div className="text-right">
-          <span className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold ${
-            tieneCualquierSubestandar ? 'bg-rose-500 text-white' : 'bg-emerald-500 text-white'
-          }`}>
-            {tieneCualquierSubestandar ? (
-              <><AlertOctagon className="w-4 h-4" /> CON HALLAZGOS</>
-            ) : (
-              <><CheckCircle2 className="w-4 h-4" /> APROBADO</>
-            )}
-          </span>
-        </div>
+        {/* Status badge live */}
+        <Badge variant={tieneCualquierSubestandar ? 'no_apto' : 'apto'}>
+          {tieneCualquierSubestandar ? 'Con hallazgos' : 'Aprobado'}
+        </Badge>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
         {errorMsg && (
-          <div className="p-4 bg-rose-50 border border-rose-200 text-rose-800 dark:bg-rose-900/30 dark:border-rose-800 dark:text-rose-200 rounded-xl text-sm font-medium">
+          <div className="p-3 bg-[#FEF2F2] border border-[#FCA5A5] text-[#991B1B] rounded-container text-sm font-medium">
             {errorMsg}
           </div>
         )}
 
         {/* 1. Datos del Vehículo y Empresa Contratista */}
-        <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-4">
-          <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wider border-b border-slate-100 dark:border-slate-700 pb-2">
+        <section className="space-y-4">
+          <h3 className="text-xs font-semibold text-[#111827] uppercase tracking-wide border-b border-[#E5E7EB] pb-2">
             1. Datos del Vehículo y Empresa Contratista
           </h3>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
             <div>
               <Input
-                label="Placa / Patente (Alta Dinámica)"
+                label="Placa / Patente"
                 value={placa}
                 onChange={e => setPlaca(e.target.value.toUpperCase())}
                 placeholder="Ej. NYP058"
@@ -333,7 +333,7 @@ export const ChecklistForm: React.FC<ChecklistFormProps> = ({
 
             <div>
               <Select
-                label="Empresa Contratista External"
+                label="Empresa Contratista"
                 value={empresaId}
                 onChange={e => setEmpresaId(e.target.value)}
                 options={empresas.map(emp => ({ value: emp.id, label: emp.nombre }))}
@@ -350,7 +350,7 @@ export const ChecklistForm: React.FC<ChecklistFormProps> = ({
 
             <div>
               <Input
-                label="Kilometraje Actual (Km)"
+                label="Kilometraje Actual (km)"
                 type="number"
                 value={kilometraje}
                 onChange={e => setKilometraje(Number(e.target.value))}
@@ -371,7 +371,7 @@ export const ChecklistForm: React.FC<ChecklistFormProps> = ({
             </div>
 
             <div>
-              <Input label="N° Interno del Vehículo" value={numeroInterno} onChange={e => setNumeroInterno(e.target.value)} placeholder="Ej. V-102" />
+              <Input label="N° Interno" value={numeroInterno} onChange={e => setNumeroInterno(e.target.value)} placeholder="Ej. V-102" />
             </div>
 
             <div>
@@ -382,16 +382,16 @@ export const ChecklistForm: React.FC<ChecklistFormProps> = ({
               <Input label="Área a Transitar" value={areaTransitar} onChange={e => setAreaTransitar(e.target.value)} placeholder="Ej. Mina / Operaciones" />
             </div>
           </div>
-        </div>
+        </section>
 
         {/* 2. Los 9 Sistemas Técnicos con Expand/Collapse (ADJ-03) */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wider">
-              2. Evaluación por Sistemas ({sistemas.length} Sistemas Técnicos)
+        <section className="space-y-4">
+          <div className="flex items-center justify-between border-b border-[#E5E7EB] pb-2">
+            <h3 className="text-xs font-semibold text-[#111827] uppercase tracking-wide">
+              2. Evaluación por Sistemas ({sistemas.length} Sistemas)
             </h3>
-            <span className="text-xs text-slate-500 font-medium">
-              E = Estándar | S = Subestándar | N/A = No Aplica
+            <span className="text-xs text-[#9CA3AF] font-medium">
+              E = Estándar · S = Subestándar · N/A
             </span>
           </div>
 
@@ -407,52 +407,53 @@ export const ChecklistForm: React.FC<ChecklistFormProps> = ({
                 items={itemsToRender}
                 values={itemsEvaluation}
                 onChange={handleItemChange}
-                defaultExpanded={sys.codigo === '1' || sys.codigo === '2'}
+                defaultExpanded={false}
               />
             );
           })}
-        </div>
+        </section>
 
         {/* 3. Técnicos de Inspección Firmantes (RN-10) */}
-        <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-4">
-          <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wider border-b border-slate-100 dark:border-slate-700 pb-2">
-            3. Técnicos de Inspección Actuantes (Máx. 3 Técnicos)
+        <section className="space-y-4">
+          <h3 className="text-xs font-semibold text-[#111827] uppercase tracking-wide border-b border-[#E5E7EB] pb-2">
+            3. Técnicos de Inspección (Máx. 3)
           </h3>
 
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            Usted está autenticado como el **primer firmante principal**. Si actuaron otros técnicos en el mismo reporte, agregue sus nombres (hasta 2 adicionales).
+          <p className="text-xs text-[#6B7280]">
+            Usted es el primer firmante principal. Agregue nombres de técnicos adicionales si participaron (hasta 2).
           </p>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-end gap-2">
             <Input
               value={nuevoTecnicoNombre}
               onChange={e => setNuevoTecnicoNombre(e.target.value)}
-              placeholder="Nombre del técnico adicional (ej. Jhon R.)..."
+              placeholder="Nombre del técnico adicional..."
               disabled={tecnicosAdicionales.length >= 2}
+              label="Técnico adicional"
             />
             <Button
               type="button"
               variant="secondary"
+              size="sm"
               onClick={handleAddTecnico}
               disabled={!nuevoTecnicoNombre.trim() || tecnicosAdicionales.length >= 2}
-              className="mt-5"
             >
               <Plus className="w-4 h-4" /> Agregar
             </Button>
           </div>
 
           {tecnicosAdicionales.length > 0 && (
-            <div className="flex flex-wrap gap-2 pt-2">
+            <div className="flex flex-wrap gap-2">
               {tecnicosAdicionales.map((nombre, idx) => (
                 <span
                   key={idx}
-                  className="inline-flex items-center gap-1.5 px-3 py-1 bg-indigo-50 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 text-indigo-700 dark:text-indigo-300 rounded-lg text-xs font-semibold"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#FAFAFA] border border-[#E5E7EB] text-[#111827] rounded-container text-xs font-medium"
                 >
-                  Técnico Adicional #{idx + 2}: {nombre}
+                  Técnico #{idx + 2}: {nombre}
                   <button
                     type="button"
                     onClick={() => handleRemoveTecnico(idx)}
-                    className="hover:text-rose-600 transition-colors"
+                    className="text-[#9CA3AF] hover:text-[#991B1B] transition-colors duration-150"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                   </button>
@@ -462,59 +463,59 @@ export const ChecklistForm: React.FC<ChecklistFormProps> = ({
           )}
 
           {!isEditingMode && (
-            <div className="pt-3 border-t border-slate-100 dark:border-slate-700">
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-2">
-                Firma Digital del Técnico Logueado *
+            <div className="pt-3 border-t border-[#E5E7EB]">
+              <label className="text-xs font-medium text-[#374151] block mb-2">
+                Firma Digital del Técnico *
               </label>
               <DigitalSignature onSave={setFirmaUrl} />
             </div>
           )}
-        </div>
+        </section>
 
         {/* 4. Observaciones y Evidencias */}
-        <div className="bg-white dark:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm space-y-4">
-          <h3 className="text-sm font-bold text-slate-800 dark:text-slate-100 uppercase tracking-wider border-b border-slate-100 dark:border-slate-700 pb-2">
-            4. Observaciones y Evidencias Fotográficas
+        <section className="space-y-4">
+          <h3 className="text-xs font-semibold text-[#111827] uppercase tracking-wide border-b border-[#E5E7EB] pb-2">
+            4. Observaciones y Evidencias
           </h3>
 
           <div>
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
+            <label className="text-xs font-medium text-[#374151] block mb-1">
               Observaciones del Técnico
             </label>
             <textarea
               rows={2}
-              className="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-              placeholder="Escriba comentarios u observaciones relevantes de la revisión técnica..."
+              className="w-full px-3 py-2 text-sm rounded-input border border-[#E5E7EB] bg-white text-[#111827] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]/10 focus:border-[#1E3A5F] transition-colors duration-150"
+              placeholder="Comentarios u observaciones relevantes..."
               value={observaciones}
               onChange={e => setObservaciones(e.target.value)}
             />
           </div>
 
           <div>
-            <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 block mb-1">
-              Mantenimiento / Intervención Recomendada
+            <label className="text-xs font-medium text-[#374151] block mb-1">
+              Mantenimiento Recomendado
             </label>
             <textarea
               rows={2}
-              className="w-full px-3.5 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+              className="w-full px-3 py-2 text-sm rounded-input border border-[#E5E7EB] bg-white text-[#111827] placeholder:text-[#9CA3AF] focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]/10 focus:border-[#1E3A5F] transition-colors duration-150"
               placeholder="Describa si se requiere mantenimiento preventivo o correctivo..."
               value={mantenimientoRecomendado}
               onChange={e => setMantenimientoRecomendado(e.target.value)}
             />
           </div>
 
-          <div className="pt-3 border-t border-slate-100 dark:border-slate-700">
+          <div className="pt-3 border-t border-[#E5E7EB]">
             <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+              <span className="text-xs font-medium text-[#374151]">
                 Evidencias Fotográficas ({evidencias.length})
               </span>
               <div className="flex gap-2">
-                <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-medium transition-colors">
-                  <Camera className="w-4 h-4" /> Tomar Foto
+                <label className="cursor-pointer inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-[#FAFAFA] border border-[#E5E7EB] hover:bg-[#F3F4F6] text-[#6B7280] hover:text-[#111827] rounded-button text-xs font-medium transition-colors duration-150">
+                  <Camera className="w-3.5 h-3.5" /> Cámara
                   <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileUpload} disabled={isUploading} />
                 </label>
-                <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 text-slate-700 dark:text-slate-200 rounded-lg text-xs font-medium transition-colors">
-                  <Upload className="w-4 h-4" /> Galería
+                <label className="cursor-pointer inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-[#FAFAFA] border border-[#E5E7EB] hover:bg-[#F3F4F6] text-[#6B7280] hover:text-[#111827] rounded-button text-xs font-medium transition-colors duration-150">
+                  <Upload className="w-3.5 h-3.5" /> Galería
                   <input type="file" accept="image/*" className="hidden" onChange={handleFileUpload} disabled={isUploading} />
                 </label>
               </div>
@@ -523,24 +524,24 @@ export const ChecklistForm: React.FC<ChecklistFormProps> = ({
             {evidencias.length > 0 && (
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {evidencias.map((ev, idx) => (
-                  <div key={idx} className="relative rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 aspect-video">
+                  <div key={idx} className="relative rounded-container overflow-hidden border border-[#E5E7EB] aspect-video">
                     <img src={ev.url} alt="Evidencia" className="w-full h-full object-cover" />
                   </div>
                 ))}
               </div>
             )}
           </div>
-        </div>
+        </section>
 
         {/* Submit Bar */}
-        <div className="flex justify-end gap-3 pt-4">
+        <div className="flex justify-end gap-3 pt-4 border-t border-[#E5E7EB]">
           {onCancel && (
             <Button type="button" variant="secondary" onClick={onCancel}>
               Cancelar
             </Button>
           )}
           <Button type="submit" variant="primary" size="lg" isLoading={isSubmitting}>
-            {isEditingMode ? '💾 Guardar Re-inspección y Corregir Planilla' : '🚀 Registrar Inspección'}
+            {isEditingMode ? 'Guardar Re-inspección' : 'Registrar Inspección'}
           </Button>
         </div>
       </form>

@@ -5,11 +5,21 @@ interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
   title: string;
+  description?: string;
   children: React.ReactNode;
   maxWidth?: string;
+  footer?: React.ReactNode;
 }
 
-export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, maxWidth = 'max-w-2xl' }) => {
+export const Modal: React.FC<ModalProps> = ({
+  isOpen,
+  onClose,
+  title,
+  description,
+  children,
+  maxWidth = 'max-w-2xl',
+  footer,
+}) => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
@@ -19,7 +29,7 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, 
       window.addEventListener('keydown', handleKeyDown);
     }
     return () => {
-      document.body.style.overflow = 'unset';
+      document.body.style.overflow = '';
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [isOpen, onClose]);
@@ -27,18 +37,55 @@ export const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, 
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
-      <div className={`bg-white border border-border rounded-dialog shadow-sm w-full ${maxWidth} max-h-[90vh] flex flex-col overflow-hidden animate-in fade-in zoom-in-95 duration-150`}>
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-          <h3 className="text-base font-semibold text-primary">{title}</h3>
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      style={{ backgroundColor: 'rgba(0,0,0,0.32)', backdropFilter: 'blur(4px)' }}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div
+        className={[
+          'bg-white border border-[#E5E7EB] rounded-dialog shadow-modal',
+          'w-full flex flex-col max-h-[90vh] overflow-hidden',
+          'animate-fade-in',
+          maxWidth,
+        ].join(' ')}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-title"
+      >
+        {/* Header */}
+        <div className="flex items-start justify-between px-6 py-4 border-b border-[#E5E7EB]">
+          <div className="flex flex-col gap-0.5">
+            <h2
+              id="modal-title"
+              className="text-sm font-semibold text-[#111827] leading-snug"
+            >
+              {title}
+            </h2>
+            {description && (
+              <p className="text-xs text-[#6B7280]">{description}</p>
+            )}
+          </div>
           <button
             onClick={onClose}
-            className="text-secondary-tertiary hover:text-primary transition-colors p-1 rounded-md"
+            className="ml-4 p-1 rounded text-[#9CA3AF] hover:text-[#111827] hover:bg-[#F3F4F6] transition-colors duration-150 shrink-0"
+            aria-label="Cerrar"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
-        <div className="p-6 overflow-y-auto flex-1">{children}</div>
+
+        {/* Body */}
+        <div className="p-6 overflow-y-auto flex-1">
+          {children}
+        </div>
+
+        {/* Footer opcional */}
+        {footer && (
+          <div className="px-6 py-4 border-t border-[#E5E7EB] flex items-center justify-end gap-2 bg-[#FAFAFA]">
+            {footer}
+          </div>
+        )}
       </div>
     </div>
   );

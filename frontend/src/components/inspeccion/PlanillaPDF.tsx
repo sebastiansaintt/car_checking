@@ -30,7 +30,7 @@ export const PlanillaPDF: React.FC<PlanillaPDFProps> = ({ inspeccion, isOpen, on
             <span className="font-bold text-slate-900">Formato Oficial FO-M4-P13-96</span> — Formulario de Interventoría de Vehículos
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={onClose}>
+            <Button variant="secondary" size="sm" onClick={onClose}>
               Cerrar
             </Button>
             <Button variant="primary" size="sm" onClick={handlePrint} className="bg-slate-900 text-white hover:bg-slate-800">

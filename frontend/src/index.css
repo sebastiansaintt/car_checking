@@ -1,23 +1,42 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,300;0,14..32,400;0,14..32,500;0,14..32,600;0,14..32,700;1,14..32,400&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/* ─── Base ─────────────────────────────────────────────────── */
 @layer base {
+  *, *::before, *::after {
+    box-sizing: border-box;
+  }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
   body {
-    @apply bg-surface-subtle text-primary font-sans antialiased min-h-screen selection:bg-gray-100;
+    @apply bg-[#FAFAFA] text-[#111827] font-sans min-h-screen;
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   }
 
   input, select, textarea, button, pre, code {
     font-family: inherit;
   }
+
+  /* Focus visible — siempre presente, nunca decorativo */
+  :focus-visible {
+    outline: 2px solid #1E3A5F;
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
 }
 
-/* Custom scrollbars for clean UI */
+/* ─── Scrollbars ─────────────────────────────────────────── */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 ::-webkit-scrollbar-track {
   background: transparent;
@@ -27,14 +46,117 @@
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #9CA3AF;
+  background: #D1D5DB;
 }
 
-/* Hide scrollbar for tab navigation rows on mobile */
-.hide-scrollbar::-webkit-scrollbar {
-  display: none;
+/* ─── Utilidades de layout editorial ────────────────────── */
+.hide-scrollbar::-webkit-scrollbar { display: none; }
+.hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ─── Transiciones estándar (motion guide) ──────────────── */
+.transition-ui {
+  transition-property: color, background-color, border-color, opacity, box-shadow;
+  transition-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  transition-duration: 150ms;
 }
-.hide-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+
+/* ─── Skeleton loading ──────────────────────────────────── */
+@keyframes skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.skeleton {
+  @apply bg-[#E5E7EB] rounded;
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}
+
+/* ─── Reduced motion ─────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ─── Tabla industrial ───────────────────────────────────── */
+.table-industrial {
+  @apply w-full text-sm;
+}
+.table-industrial thead th {
+  @apply px-4 py-2.5 text-left text-xs font-medium text-[#6B7280] uppercase tracking-wide border-b border-[#E5E7EB] bg-[#FAFAFA];
+}
+.table-industrial tbody tr {
+  @apply border-b border-[#F3F4F6] transition-colors duration-100;
+}
+.table-industrial tbody tr:hover {
+  @apply bg-[#FAFAFA];
+}
+.table-industrial tbody td {
+  @apply px-4 py-3 text-[#111827] align-middle;
+}
+.table-industrial tbody tr:last-child {
+  @apply border-b-0;
+}
+
+/* ─── Page header editorial ──────────────────────────────── */
+.page-header {
+  @apply border-b border-[#E5E7EB] bg-white px-6 py-4;
+}
+.page-header-breadcrumb {
+  @apply text-xs text-[#9CA3AF] font-medium mb-1 flex items-center gap-1.5;
+}
+.page-header-title {
+  @apply text-base font-semibold text-[#111827] leading-tight;
+}
+.page-header-description {
+  @apply text-sm text-[#6B7280] mt-0.5;
+}
+
+/* ─── Sidebar ────────────────────────────────────────────── */
+.sidebar-nav-item {
+  @apply flex items-center gap-2.5 px-3 py-2 text-sm font-medium rounded-[8px] text-[#6B7280] cursor-pointer select-none transition-colors duration-150 hover:bg-[#F3F4F6] hover:text-[#111827];
+}
+.sidebar-nav-item.active {
+  @apply bg-[#F3F4F6] text-[#111827];
+}
+
+/* ─── Sidebar layout ────────────────────────────────────── */
+.app-sidebar {
+  @apply fixed left-0 top-0 bottom-0 w-[220px] bg-white border-r border-[#E5E7EB] flex flex-col z-40;
+  transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.app-sidebar.collapsed {
+  @apply -translate-x-full;
+}
+.app-main {
+  @apply ml-[220px] min-h-screen;
+  transition: margin-left 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.app-main.expanded {
+  @apply ml-0;
+}
+
+/* Mobile topbar (only visible when sidebar is hidden) */
+.mobile-topbar {
+  @apply h-12 bg-white border-b border-[#E5E7EB] flex items-center px-4 gap-3;
+}
+
+/* Sidebar overlay for mobile */
+.sidebar-overlay {
+  @apply fixed inset-0 bg-black/20 z-30;
+  backdrop-filter: blur(2px);
+  transition: opacity 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (max-width: 767px) {
+  .app-sidebar {
+    @apply -translate-x-full;
+  }
+  .app-sidebar.mobile-open {
+    @apply translate-x-0;
+  }
+  .app-main {
+    @apply ml-0;
+  }
 }
