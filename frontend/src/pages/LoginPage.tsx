@@ -4,88 +4,111 @@ import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
 import { ToastNotification } from '../components/ui/ToastNotification';
 import { InstallPrompt } from '../components/pwa/InstallPrompt';
-import { ShieldCheck, Car } from 'lucide-react';
 
 export const LoginPage: React.FC = () => {
   const { login } = useAuth();
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: 'error' | 'success' } | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setToastMessage(null);
+    setToast(null);
 
     if (!email || !password) {
-      setToastMessage('Por favor ingrese correo electrónico y contraseña.');
+      setToast({ message: 'Ingrese correo electrónico y contraseña.', type: 'error' });
       return;
     }
 
     setIsLoading(true);
-
     try {
       await login(email, password);
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Error al iniciar sesión. Verifique sus credenciales';
-      setToastMessage(msg);
+      const msg = err instanceof Error ? err.message : 'Credenciales incorrectas. Verifique e intente de nuevo.';
+      setToast({ message: msg, type: 'error' });
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#0F172A] via-[#1E3A5F] to-[#0F172A] flex flex-col justify-center items-center p-4">
-      {/* Toast Notificación Emergente */}
-      <ToastNotification message={toastMessage} onClose={() => setToastMessage(null)} />
-      
-      {/* Prompt PWA */}
+    <>
+      <ToastNotification
+        message={toast?.message ?? null}
+        type={toast?.type}
+        onClose={() => setToast(null)}
+      />
       <InstallPrompt />
 
-      <div className="w-full max-w-xs bg-white border border-border rounded-card p-8 shadow-2xl space-y-6">
-        <div className="flex flex-col items-center text-center space-y-2">
-          <div className="w-10 h-10 bg-brand text-white rounded-card flex items-center justify-center shadow-md">
-            <Car className="w-6 h-6" />
-          </div>
-          <div className="space-y-0">
-            <h1 className="text-xl font-black text-primary tracking-tight">Car Check</h1>
-          </div>
-          <p className="text-xs text-secondary-text pt-1">
-            Ingrese sus credenciales asignadas
-          </p>
-        </div>
+      {/* Pantalla dividida: contenido centrado en fondo claro */}
+      <div className="min-h-screen bg-[#FAFAFA] flex items-center justify-center p-4">
+        <div className="w-full max-w-[340px]">
 
-        <form onSubmit={handleSubmit} className="space-y-2">
-          <Input
-            label="Correo Electrónico"
-            type="email"
-            placeholder="johndoe@email.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-          <Input
-            label="Contraseña"
-            type="password"
-            placeholder="••••••••"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
+          {/* Marca */}
+          <div className="mb-8 flex flex-col items-start gap-2">
+            <div
+              className="w-8 h-8 rounded-[8px] flex items-center justify-center"
+              style={{ backgroundColor: '#1E3A5F' }}
+            >
+              <svg viewBox="0 0 24 24" className="w-4 h-4 fill-white">
+                <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/>
+              </svg>
+            </div>
+            <div>
+              <h1 className="text-[15px] font-semibold text-[#111827] leading-tight tracking-tight">
+                CarCheck
+              </h1>
+              <p className="text-xs text-[#9CA3AF] mt-0.5">
+                Sistema de Inspección — Sointer Ltda.
+              </p>
+            </div>
+          </div>
 
-          <div className="pt-2">
-            <Button type="submit" variant="primary" className="w-full bg-brand hover:bg-brand-hover text-white py-2.5 text-sm font-bold shadow-md" isLoading={isLoading}>
-              <ShieldCheck className="w-4 h-4" /> Iniciar Sesión
+          {/* Formulario */}
+          <form onSubmit={handleSubmit} className="flex flex-col gap-4" noValidate>
+            <div className="flex flex-col gap-3">
+              <Input
+                label="Correo electrónico"
+                type="email"
+                id="login-email"
+                placeholder="nombre@sointer.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
+                autoFocus
+                required
+              />
+              <Input
+                label="Contraseña"
+                type="password"
+                id="login-password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="current-password"
+                required
+              />
+            </div>
+
+            <Button
+              type="submit"
+              variant="primary"
+              size="lg"
+              className="w-full"
+              isLoading={isLoading}
+              id="login-submit"
+            >
+              Iniciar sesión
             </Button>
-          </div>
-        </form>
+          </form>
 
-        <div className="border-t border-border pt-4">
-          <p className="text-[11px] text-secondary-tertiary text-center">
-            Desarrollado para gestión eficiente de flota - v2.0
+          {/* Footer */}
+          <p className="mt-8 text-[11px] text-[#D1D5DB] text-center">
+            v2.0 · Solo para personal autorizado
           </p>
         </div>
       </div>
-    </div>
+    </>
   );
 };

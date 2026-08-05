@@ -11,7 +11,6 @@ export const InstallPrompt: React.FC = () => {
   const [showPrompt, setShowPrompt] = useState<boolean>(false);
 
   useEffect(() => {
-    // Si la app ya está instalada o fue descartada previamente
     const dismissed = localStorage.getItem('car_check_pwa_dismissed');
     if (dismissed) return;
 
@@ -47,30 +46,30 @@ export const InstallPrompt: React.FC = () => {
   if (!showPrompt) return null;
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:max-w-sm bg-gray-900 text-white p-4 rounded-card shadow-xl border border-gray-800 z-50 flex items-start gap-3 animate-in slide-in-from-bottom-5 duration-300">
-      <div className="p-2.5 bg-brand text-white rounded-container shrink-0">
-        <Smartphone className="w-5 h-5" />
+    <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:max-w-sm bg-white text-[#111827] p-4 rounded-container shadow-modal border border-[#E5E7EB] z-50 flex items-start gap-3 animate-fade-in">
+      <div className="p-2 bg-[#FAFAFA] text-[#1E3A5F] border border-[#E5E7EB] rounded-container shrink-0">
+        <Smartphone className="w-4 h-4" />
       </div>
       <div className="flex-1 space-y-1 text-xs">
         <div className="flex items-center justify-between">
-          <h5 className="font-bold text-white text-xs">Instalar Car Check App</h5>
-          <button onClick={handleDismiss} className="text-gray-400 hover:text-white p-0.5">
+          <h5 className="font-semibold text-[#111827] text-xs">Instalar aplicación</h5>
+          <button onClick={handleDismiss} className="text-[#9CA3AF] hover:text-[#111827] p-0.5 transition-colors">
             <X className="w-3.5 h-3.5" />
           </button>
         </div>
-        <p className="text-gray-300 text-[11px] leading-relaxed">
-          Instala la aplicación en tu pantalla de inicio para un acceso rápido y uso optimizado sin conexión.
+        <p className="text-[#6B7280] text-[11px] leading-relaxed">
+          Instala CarCheck para un acceso rápido y uso sin conexión.
         </p>
         <div className="pt-2 flex gap-2">
           <button
             onClick={handleInstallClick}
-            className="px-3 py-1.5 bg-brand hover:bg-brand-hover text-white font-bold rounded-button text-[11px] flex items-center gap-1.5 transition-colors"
+            className="px-3 py-1.5 bg-[#1E3A5F] hover:bg-[#142843] text-white font-medium rounded-button text-[11px] flex items-center gap-1.5 transition-colors duration-150"
           >
-            <Download className="w-3.5 h-3.5" /> Instalar App
+            <Download className="w-3.5 h-3.5" /> Instalar
           </button>
           <button
             onClick={handleDismiss}
-            className="px-2.5 py-1.5 text-gray-400 hover:text-white text-[11px] font-medium transition-colors"
+            className="px-2.5 py-1.5 text-[#6B7280] hover:text-[#111827] text-[11px] font-medium transition-colors duration-150"
           >
             Más tarde
           </button>

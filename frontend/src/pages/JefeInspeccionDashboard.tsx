@@ -9,43 +9,39 @@ import { Button } from '../components/ui/Button';
 import { Select } from '../components/ui/Select';
 import { Modal } from '../components/ui/Modal';
 import { ToastNotification } from '../components/ui/ToastNotification';
+import { AppShell } from '../components/ui/AppShell';
 import { NotificationCenter } from '../components/ui/NotificationCenter';
 import { AprobacionModal } from '../components/inspeccion/AprobacionModal';
 import {
   Download,
-  Filter,
-  LogOut,
-  Truck,
-  CheckCircle2,
   RefreshCw,
   Eye,
   ClipboardList,
   ShieldAlert,
   Code,
-  Building2,
   Award,
   Clock,
-  CheckCheck
+  Truck,
+  CheckCircle2,
 } from 'lucide-react';
 
+type Tab = 'pendientes' | 'trazabilidad' | 'vehiculos' | 'auditoria';
+
 export const JefeInspeccionDashboard: React.FC = () => {
-  const { user, logout } = useAuth();
+  useAuth();
   const [vehiculos, setVehiculos] = useState<Vehiculo[]>([]);
   const [inspecciones, setInspecciones] = useState<Inspeccion[]>([]);
   const [empresas, setEmpresas] = useState<EmpresaContratista[]>([]);
   const [auditLogs, setAuditLogs] = useState<AuditLogItem[]>([]);
-
-  const [activeTab, setActiveTab] = useState<'pendientes' | 'trazabilidad' | 'vehiculos' | 'auditoria'>('pendientes');
+  const [activeTab, setActiveTab] = useState<Tab>('pendientes');
   const [loading, setLoading] = useState<boolean>(true);
   const [exporting, setExporting] = useState<boolean>(false);
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
-  // Filters
   const [filterEmpresaId, setFilterEmpresaId] = useState<string>('');
   const [filterResultado, setFilterResultado] = useState<string>('');
   const [filterEstado, setFilterEstado] = useState<string>('');
 
-  // Modals
   const [selectedInspeccion, setSelectedInspeccion] = useState<Inspeccion | null>(null);
   const [isAprobacionOpen, setIsAprobacionOpen] = useState<boolean>(false);
   const [selectedAuditLog, setSelectedAuditLog] = useState<AuditLogItem | null>(null);
@@ -58,20 +54,14 @@ export const JefeInspeccionDashboard: React.FC = () => {
       if (filterEmpresaId) params.append('empresa_contratista_id', filterEmpresaId);
       if (filterResultado) params.append('resultado_general', filterResultado);
       if (filterEstado) params.append('estado', filterEstado);
-
-      if (params.toString()) {
-        endpoint += `&${params.toString()}`;
-      }
-
-      const auditEndpoint = '/audit-logs?limit=100';
+      if (params.toString()) endpoint += `&${params.toString()}`;
 
       const [vData, iData, eData, aData] = await Promise.all([
         apiFetch<Vehiculo[]>('/vehiculos'),
         apiFetch<Inspeccion[]>(endpoint),
         apiFetch<EmpresaContratista[]>('/empresas-contratistas').catch(() => []),
-        apiFetch<AuditLogItem[]>(auditEndpoint).catch(() => [])
+        apiFetch<AuditLogItem[]>('/audit-logs?limit=100').catch(() => []),
       ]);
-
       setVehiculos(vData);
       setInspecciones(iData);
       setEmpresas(eData);
@@ -84,9 +74,7 @@ export const JefeInspeccionDashboard: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    loadData();
-  }, [filterEmpresaId, filterResultado, filterEstado]);
+  useEffect(() => { loadData(); }, [filterEmpresaId, filterResultado, filterEstado]);
 
   const handleExportExcel = async () => {
     setExporting(true);
@@ -95,17 +83,16 @@ export const JefeInspeccionDashboard: React.FC = () => {
       const params = new URLSearchParams();
       if (filterEmpresaId) params.append('empresa_contratista_id', filterEmpresaId);
       if (filterResultado) params.append('resultado_general', filterResultado);
-
       const blob = await apiFetch<Blob>(`${endpoint}${params.toString()}`);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `reporte_interventoria_sointer_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      a.download = `reporte_sointer_${new Date().toISOString().slice(0, 10)}.xlsx`;
       document.body.appendChild(a);
       a.click();
       a.remove();
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : 'Error al exportar a Excel';
+      const msg = err instanceof Error ? err.message : 'Error al exportar';
       setToast({ message: msg, type: 'error' });
     } finally {
       setExporting(false);
@@ -119,429 +106,353 @@ export const JefeInspeccionDashboard: React.FC = () => {
 
   const handleApprovedSuccess = () => {
     setIsAprobacionOpen(false);
-    setToast({ message: 'Inspección aprobada con éxito. Sello digital emitido.', type: 'success' });
+    setToast({ message: 'Inspección aprobada. Sello digital emitido.', type: 'success' });
     loadData();
   };
 
-  // KPIs
   const pendientesAprobacion = inspecciones.filter(
     (i) => i.estado === 'pendiente_aprobacion' || i.estado === 'con_hallazgos'
   );
   const aprobadas = inspecciones.filter((i) => i.estado === 'aprobado');
-  const totalInspecciones = inspecciones.length;
+
+  const navItems = [
+    { id: 'pendientes',   label: `Pendientes (${pendientesAprobacion.length})`, icon: <Clock className="w-4 h-4" /> },
+    { id: 'trazabilidad', label: `Trazabilidad (${inspecciones.length})`,        icon: <ClipboardList className="w-4 h-4" /> },
+    { id: 'vehiculos',    label: `Flota (${vehiculos.length})`,                  icon: <Truck className="w-4 h-4" /> },
+    { id: 'auditoria',    label: `Auditoría (${auditLogs.length})`,              icon: <ShieldAlert className="w-4 h-4" /> },
+  ];
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 text-slate-900">
+    <>
       <ToastNotification
-        message={toast?.message || null}
-        type={toast?.type || 'success'}
+        message={toast?.message ?? null}
+        type={toast?.type}
         onClose={() => setToast(null)}
       />
 
-      {/* Header Sointer Ltda. */}
-      <header className="bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-20">
-        <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-emerald-600 text-white rounded-xl flex items-center justify-center font-bold shadow-md">
-              <Award className="w-6 h-6" />
+      <AppShell
+        navItems={navItems}
+        activeTab={activeTab}
+        onTabChange={(id) => setActiveTab(id as Tab)}
+        headerRight={<NotificationCenter />}
+      >
+        <div className="p-6 space-y-5">
+
+          {/* ── Métricas compactas ─────────────────────────────── */}
+          <div className="flex flex-wrap gap-4 pb-4 border-b border-[#E5E7EB]">
+            <div>
+              <p className="text-xs text-[#9CA3AF]">Pendientes firma</p>
+              <p className="text-xl font-semibold tabular-nums text-[#92400E]">{pendientesAprobacion.length}</p>
             </div>
             <div>
-              <h1 className="text-sm font-bold tracking-tight text-white flex items-center gap-2">
-                SOINTER LTDA. <span className="text-xs bg-emerald-600/30 text-emerald-400 font-semibold px-2 py-0.5 rounded border border-emerald-500/30">Interventoría</span>
-              </h1>
-              <p className="text-xs text-slate-400">Jefe de Inspección (Supervisión & Aprobaciones) — {user?.nombre}</p>
+              <p className="text-xs text-[#9CA3AF]">Aprobadas</p>
+              <p className="text-xl font-semibold tabular-nums text-[#065F46]">{aprobadas.length}</p>
             </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <NotificationCenter />
-            <Button variant="outline" size="sm" onClick={logout} className="border-slate-700 text-slate-200 hover:bg-slate-800">
-              <LogOut className="w-3.5 h-3.5" /> Cerrar Sesión
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6">
-        {/* Navigation Tabs */}
-        <div className="border-b border-slate-200 pb-3 -mx-4 px-4 overflow-x-auto hide-scrollbar">
-          <div className="flex items-center gap-2 min-w-max">
-            <button
-              onClick={() => setActiveTab('pendientes')}
-              className={`px-4 py-2 text-xs font-bold rounded-xl transition-all flex items-center gap-2 whitespace-nowrap ${
-                activeTab === 'pendientes'
-                  ? 'bg-emerald-600 text-white shadow-sm'
-                  : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
-              }`}
-            >
-              <Clock className="w-4 h-4" /> Pendientes de Aprobación ({pendientesAprobacion.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('trazabilidad')}
-              className={`px-4 py-2 text-xs font-bold rounded-xl transition-all flex items-center gap-2 whitespace-nowrap ${
-                activeTab === 'trazabilidad'
-                  ? 'bg-slate-900 text-white shadow-sm'
-                  : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
-              }`}
-            >
-              <ClipboardList className="w-4 h-4" /> Trazabilidad & Historial ({inspecciones.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('vehiculos')}
-              className={`px-4 py-2 text-xs font-bold rounded-xl transition-all flex items-center gap-2 whitespace-nowrap ${
-                activeTab === 'vehiculos'
-                  ? 'bg-slate-900 text-white shadow-sm'
-                  : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
-              }`}
-            >
-              <Truck className="w-4 h-4" /> Flota de Vehículos ({vehiculos.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('auditoria')}
-              className={`px-4 py-2 text-xs font-bold rounded-xl transition-all flex items-center gap-2 whitespace-nowrap ${
-                activeTab === 'auditoria'
-                  ? 'bg-slate-900 text-white shadow-sm'
-                  : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
-              }`}
-            >
-              <ShieldAlert className="w-4 h-4" /> Bitácora de Auditoría ({auditLogs.length})
-            </button>
-          </div>
-        </div>
-
-        {/* KPI Metrics */}
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-          <div className="bg-white p-4 border border-slate-200 rounded-xl shadow-xs flex items-center justify-between">
             <div>
-              <p className="text-xs font-semibold text-slate-500">Pendientes de Firma/Aprobación</p>
-              <h3 className="text-2xl font-black text-amber-600 mt-1">{pendientesAprobacion.length}</h3>
+              <p className="text-xs text-[#9CA3AF]">Total intervenidas</p>
+              <p className="text-xl font-semibold tabular-nums text-[#111827]">{inspecciones.length}</p>
             </div>
-            <div className="p-3 bg-amber-50 text-amber-600 rounded-xl">
-              <Clock className="w-6 h-6" />
-            </div>
-          </div>
-
-          <div className="bg-white p-4 border border-slate-200 rounded-xl shadow-xs flex items-center justify-between">
             <div>
-              <p className="text-xs font-semibold text-slate-500">Inspecciones Aprobadas</p>
-              <h3 className="text-2xl font-black text-emerald-600 mt-1">{aprobadas.length}</h3>
-            </div>
-            <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
-              <CheckCheck className="w-6 h-6" />
+              <p className="text-xs text-[#9CA3AF]">Empresas contratistas</p>
+              <p className="text-xl font-semibold tabular-nums text-[#111827]">{empresas.length}</p>
             </div>
           </div>
 
-          <div className="bg-white p-4 border border-slate-200 rounded-xl shadow-xs flex items-center justify-between">
-            <div>
-              <p className="text-xs font-semibold text-slate-500">Total Inspecciones Intervenidas</p>
-              <h3 className="text-2xl font-black text-slate-900 mt-1">{totalInspecciones}</h3>
+          {loading ? (
+            <div className="flex flex-col gap-3">
+              {[1,2,3,4].map(i => <div key={i} className="skeleton h-8 rounded" />)}
             </div>
-            <div className="p-3 bg-slate-100 text-slate-700 rounded-xl">
-              <ClipboardList className="w-6 h-6" />
-            </div>
-          </div>
+          ) : (
+            <>
+              {/* ── TAB: PENDIENTES ─────────────────────────────── */}
+              {activeTab === 'pendientes' && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h1 className="text-base font-semibold text-[#111827]">Cola de Aprobación</h1>
+                      <p className="text-sm text-[#6B7280]">
+                        Inspecciones procesadas que requieren firma y sello de dictamen oficial.
+                      </p>
+                    </div>
+                    <Button variant="ghost" size="sm" onClick={loadData}>
+                      <RefreshCw className="w-3.5 h-3.5" /> Actualizar
+                    </Button>
+                  </div>
 
-          <div className="bg-white p-4 border border-slate-200 rounded-xl shadow-xs flex items-center justify-between">
-            <div>
-              <p className="text-xs font-semibold text-slate-500">Empresas Contratistas</p>
-              <h3 className="text-2xl font-black text-blue-600 mt-1">{empresas.length}</h3>
-            </div>
-            <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
-              <Building2 className="w-6 h-6" />
-            </div>
-          </div>
-        </div>
-
-        {/* TAB 1: PENDIENTES DE APROBACIÓN */}
-        {activeTab === 'pendientes' && (
-          <div className="space-y-4">
-            <div className="bg-white p-4 border border-slate-200 rounded-xl flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-amber-600" /> Cola Prioritaria para Firma de Aprobación
-                </h3>
-                <p className="text-xs text-slate-500">
-                  Inspecciones procesadas por técnicos que requieren evaluación y firma de dictamen oficial Sointer Ltda.
-                </p>
-              </div>
-              <Button variant="outline" size="sm" onClick={loadData}>
-                <RefreshCw className="w-3.5 h-3.5" /> Actualizar
-              </Button>
-            </div>
-
-            {loading ? (
-              <div className="p-12 text-center text-sm text-slate-500 bg-white border border-slate-200 rounded-xl">
-                Cargando cola de aprobaciones...
-              </div>
-            ) : pendientesAprobacion.length === 0 ? (
-              <div className="p-12 text-center text-sm text-slate-500 bg-white border border-slate-200 rounded-xl flex flex-col items-center gap-2">
-                <CheckCircle2 className="w-8 h-8 text-emerald-500" />
-                <p className="font-semibold text-slate-800">¡Al día! No hay inspecciones pendientes por aprobar.</p>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {pendientesAprobacion.map((ins) => {
-                  const emp = empresas.find((e) => e.id === ins.empresa_contratista_id);
-                  const hallazgosPend = ins.hallazgos?.filter((h) => !h.atendido).length || 0;
-                  const placa = ins.vehiculo?.patente || ins.vehiculo_patente || ins.vehiculo_id;
-
-                  return (
-                    <div
-                      key={ins.id}
-                      className="bg-white p-5 border border-slate-200 rounded-xl shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-4"
-                    >
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="font-mono text-xs font-bold text-slate-900 bg-slate-100 px-2 py-1 rounded">
-                            N° {ins.numero_inspeccion} (Rev. #{ins.numero_revision})
-                          </span>
-                          <Badge variant={ins.estado === 'pendiente_aprobacion' ? 'estandar' : 'subestandar'}>
-                            {ins.estado.toUpperCase().replace('_', ' ')}
-                          </Badge>
-                        </div>
-
-                        <div>
-                          <h4 className="font-bold text-slate-900 text-base flex items-center gap-2">
-                            <Truck className="w-4 h-4 text-brand" /> {placa}
-                          </h4>
-                          <p className="text-xs text-slate-600 flex items-center gap-1.5 mt-0.5">
-                            <Building2 className="w-3.5 h-3.5 text-slate-400" />
-                            <span>{emp?.nombre || ins.empresa_contratista_nombre || 'Empresa Contratista no asignada'}</span>
-                          </p>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-2 text-xs pt-1">
-                          <div className="bg-slate-50 p-2 rounded border border-slate-100">
-                            <span className="text-slate-400 text-[10px] block">Dictamen General</span>
-                            <span className="font-semibold capitalize text-slate-800">{ins.resultado_general}</span>
-                          </div>
-                          <div className="bg-slate-50 p-2 rounded border border-slate-100">
-                            <span className="text-slate-400 text-[10px] block">Hallazgos Sin Atender</span>
-                            <span className={`font-semibold ${hallazgosPend > 0 ? 'text-rose-600' : 'text-emerald-600'}`}>
-                              {hallazgosPend} pendiente(s)
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center justify-between pt-3 border-t border-slate-100">
-                        <span className="text-[11px] text-slate-400 font-mono">
-                          {new Date(ins.fecha).toLocaleString('es-CL', { dateStyle: 'short', timeStyle: 'short' })}
-                        </span>
-                        <Button
-                          variant="primary"
-                          size="sm"
-                          onClick={() => handleOpenAprobacionModal(ins)}
-                          className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
-                        >
-                          <Award className="w-3.5 h-3.5" /> Revisar & Aprobar
-                        </Button>
+                  {pendientesAprobacion.length === 0 ? (
+                    <div className="border border-[#E5E7EB] rounded-container px-6 py-10 flex flex-col items-center gap-2 text-center">
+                      <CheckCircle2 className="w-5 h-5 text-[#065F46]" />
+                      <p className="text-sm text-[#374151] font-medium">Al día — no hay inspecciones pendientes.</p>
+                    </div>
+                  ) : (
+                    <div className="border border-[#E5E7EB] rounded-container overflow-hidden">
+                      <div className="overflow-x-auto">
+                        <table className="table-industrial">
+                          <thead>
+                            <tr>
+                              <th>N° / Rev.</th>
+                              <th>Placa</th>
+                              <th>Empresa</th>
+                              <th>Fecha</th>
+                              <th>Dictamen</th>
+                              <th>Hallazgos pend.</th>
+                              <th className="text-right">Acción</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {pendientesAprobacion.map((ins) => {
+                              const emp = empresas.find((e) => e.id === ins.empresa_contratista_id);
+                              const hallazgosPend = ins.hallazgos?.filter((h) => !h.atendido).length || 0;
+                              const placa = ins.vehiculo?.patente || ins.vehiculo_patente || ins.vehiculo_id;
+                              return (
+                                <tr key={ins.id}>
+                                  <td className="font-mono text-xs">
+                                    <span className="font-semibold text-[#111827]">N°{ins.numero_inspeccion}</span>
+                                    <span className="text-[#9CA3AF] ml-1">R{ins.numero_revision}</span>
+                                  </td>
+                                  <td className="font-semibold text-sm">{placa}</td>
+                                  <td className="text-[#6B7280] text-xs">{emp?.nombre || ins.empresa_contratista_nombre || '—'}</td>
+                                  <td className="font-mono text-xs text-[#6B7280]">
+                                    {new Date(ins.fecha).toLocaleDateString('es-CO')}
+                                  </td>
+                                  <td>
+                                    <Badge variant={ins.resultado_general === 'aprobado' ? 'apto' : 'no_apto'}>
+                                      {ins.resultado_general?.replace(/_/g, ' ') ?? '—'}
+                                    </Badge>
+                                  </td>
+                                  <td>
+                                    {hallazgosPend > 0 ? (
+                                      <span className="text-xs text-[#991B1B] font-medium">{hallazgosPend} pendiente(s)</span>
+                                    ) : (
+                                      <span className="text-xs text-[#9CA3AF]">—</span>
+                                    )}
+                                  </td>
+                                  <td className="text-right">
+                                    <Button variant="secondary" size="sm" onClick={() => handleOpenAprobacionModal(ins)}>
+                                      <Award className="w-3.5 h-3.5" /> Revisar y aprobar
+                                    </Button>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                          </tbody>
+                        </table>
                       </div>
                     </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* TAB 2: TRAZABILIDAD & HISTORIAL */}
-        {activeTab === 'trazabilidad' && (
-          <div className="space-y-4">
-            <div className="bg-white p-4 border border-slate-200 rounded-xl space-y-3">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
-                <div className="flex items-center gap-2 text-xs font-bold text-slate-900">
-                  <Filter className="w-4 h-4 text-slate-500" /> Filtros de Trazabilidad
-                </div>
-                <div className="flex gap-2 w-full sm:w-auto">
-                  <Button variant="outline" size="sm" onClick={loadData}>
-                    <RefreshCw className="w-3.5 h-3.5" /> Actualizar
-                  </Button>
-                  <Button variant="primary" size="sm" onClick={handleExportExcel} isLoading={exporting}>
-                    <Download className="w-3.5 h-3.5" /> Exportar a Excel (.xlsx)
-                  </Button>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <Select
-                  label="Empresa Contratista"
-                  value={filterEmpresaId}
-                  onChange={(e) => setFilterEmpresaId(e.target.value)}
-                  options={[
-                    { value: '', label: 'Todas las empresas contratistas' },
-                    ...empresas.map((e) => ({ value: e.id, label: e.nombre }))
-                  ]}
-                />
-                <Select
-                  label="Estado de Inspección"
-                  value={filterEstado}
-                  onChange={(e) => setFilterEstado(e.target.value)}
-                  options={[
-                    { value: '', label: 'Todos los estados' },
-                    { value: 'en_revision', label: 'En Revisión' },
-                    { value: 'con_hallazgos', label: 'Con Hallazgos' },
-                    { value: 'pendiente_aprobacion', label: 'Pendiente Aprobación' },
-                    { value: 'aprobado', label: 'Aprobado' }
-                  ]}
-                />
-                <Select
-                  label="Dictamen General"
-                  value={filterResultado}
-                  onChange={(e) => setFilterResultado(e.target.value)}
-                  options={[
-                    { value: '', label: 'Todos los dictámenes' },
-                    { value: 'aprobado', label: 'Aprobado' },
-                    { value: 'con_hallazgos', label: 'Con Hallazgos' }
-                  ]}
-                />
-              </div>
-            </div>
-
-            <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-xs">
-              {loading ? (
-                <div className="p-12 text-center text-sm text-slate-500">Cargando trazabilidad...</div>
-              ) : inspecciones.length === 0 ? (
-                <div className="p-12 text-center text-sm text-slate-500">No se encontraron inspecciones registrados.</div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
-                    <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase text-[10px]">
-                      <tr>
-                        <th className="py-3.5 px-4">N° Ins.</th>
-                        <th className="py-3.5 px-4">Fecha</th>
-                        <th className="py-3.5 px-4">Vehículo / Placa</th>
-                        <th className="py-3.5 px-4">Empresa Contratista</th>
-                        <th className="py-3.5 px-4">Revisión</th>
-                        <th className="py-3.5 px-4">Estado</th>
-                        <th className="py-3.5 px-4">Sello Digital</th>
-                        <th className="py-3.5 px-4 text-right">Acción</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {inspecciones.map((ins) => {
-                        const emp = empresas.find((e) => e.id === ins.empresa_contratista_id);
-                        const hasSello = !!ins.sello_url;
-                        const placa = ins.vehiculo?.patente || ins.vehiculo_patente || ins.vehiculo_id;
-
-                        return (
-                          <tr key={ins.id} className="hover:bg-slate-50/80 transition-colors">
-                            <td className="py-3 px-4 font-mono font-bold text-slate-900">
-                              N° {ins.numero_inspeccion}
-                            </td>
-                            <td className="py-3 px-4 font-mono text-slate-600">
-                              {new Date(ins.fecha).toLocaleString('es-CL', { dateStyle: 'short', timeStyle: 'short' })}
-                            </td>
-                            <td className="py-3 px-4 font-bold text-slate-900 font-mono">
-                              {placa}
-                            </td>
-                            <td className="py-3 px-4 font-medium text-slate-700">
-                              {emp?.nombre || ins.empresa_contratista_nombre || 'Externo'}
-                            </td>
-                            <td className="py-3 px-4 font-mono text-slate-600">
-                              Rev. #{ins.numero_revision}
-                            </td>
-                            <td className="py-3 px-4">
-                              <Badge variant={ins.estado === 'aprobado' ? 'estandar' : ins.estado === 'con_hallazgos' ? 'subestandar' : 'neutral'}>
-                                {ins.estado.toUpperCase().replace('_', ' ')}
-                              </Badge>
-                            </td>
-                            <td className="py-3 px-4">
-                              {hasSello ? (
-                                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                                  <Award className="w-3 h-3 text-emerald-600" /> Emitido
-                                </span>
-                              ) : (
-                                <span className="text-[11px] text-slate-400 italic">Pendiente</span>
-                              )}
-                            </td>
-                            <td className="py-3 px-4 text-right">
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                onClick={() => handleOpenAprobacionModal(ins)}
-                              >
-                                <Eye className="w-3.5 h-3.5" /> Detalle / Sello
-                              </Button>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                  )}
                 </div>
               )}
-            </div>
-          </div>
-        )}
 
-        {/* TAB 3: VEHÍCULOS */}
-        {activeTab === 'vehiculos' && <VehiculosTable vehiculos={vehiculos} />}
+              {/* ── TAB: TRAZABILIDAD ───────────────────────────── */}
+              {activeTab === 'trazabilidad' && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h1 className="text-base font-semibold text-[#111827]">Trazabilidad e Historial</h1>
+                      <p className="text-sm text-[#6B7280]">Registro completo de todas las inspecciones intervenidas.</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button variant="ghost" size="sm" onClick={loadData}>
+                        <RefreshCw className="w-3.5 h-3.5" />
+                      </Button>
+                      <Button variant="secondary" size="sm" onClick={handleExportExcel} isLoading={exporting}>
+                        <Download className="w-3.5 h-3.5" /> Exportar .xlsx
+                      </Button>
+                    </div>
+                  </div>
 
-        {/* TAB 4: AUDITORÍA */}
-        {activeTab === 'auditoria' && (
-          <div className="space-y-4">
-            <div className="bg-white p-4 border border-slate-200 rounded-xl overflow-hidden shadow-xs">
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs">
-                  <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase text-[10px]">
-                    <tr>
-                      <th className="py-3 px-4">Fecha / Hora</th>
-                      <th className="py-3 px-4">Acción</th>
-                      <th className="py-3 px-4">Entidad</th>
-                      <th className="py-3 px-4">IP</th>
-                      <th className="py-3 px-4 text-right">Payload</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {auditLogs.map((log) => (
-                      <tr key={log.id} className="hover:bg-slate-50/50">
-                        <td className="py-3 px-4 font-mono text-slate-600">
-                          {new Date(log.timestamp).toLocaleString('es-CL')}
-                        </td>
-                        <td className="py-3 px-4 font-bold uppercase">{log.accion}</td>
-                        <td className="py-3 px-4 font-medium text-slate-900">{log.entidad}</td>
-                        <td className="py-3 px-4 font-mono text-slate-500">{log.ip || 'system'}</td>
-                        <td className="py-3 px-4 text-right">
-                          <Button variant="outline" size="sm" onClick={() => setSelectedAuditLog(log)}>
-                            <Code className="w-3.5 h-3.5" /> JSON
-                          </Button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        )}
-      </main>
+                  {/* Filtros */}
+                  <div className="flex flex-wrap gap-3">
+                    <div className="w-52">
+                      <Select
+                        label="Empresa"
+                        value={filterEmpresaId}
+                        onChange={(e) => setFilterEmpresaId(e.target.value)}
+                        options={[
+                          { value: '', label: 'Todas' },
+                          ...empresas.map((e) => ({ value: e.id, label: e.nombre })),
+                        ]}
+                      />
+                    </div>
+                    <div className="w-44">
+                      <Select
+                        label="Estado"
+                        value={filterEstado}
+                        onChange={(e) => setFilterEstado(e.target.value)}
+                        options={[
+                          { value: '', label: 'Todos' },
+                          { value: 'en_revision', label: 'En revisión' },
+                          { value: 'con_hallazgos', label: 'Con hallazgos' },
+                          { value: 'pendiente_aprobacion', label: 'Pend. aprobación' },
+                          { value: 'aprobado', label: 'Aprobado' },
+                        ]}
+                      />
+                    </div>
+                    <div className="w-44">
+                      <Select
+                        label="Dictamen"
+                        value={filterResultado}
+                        onChange={(e) => setFilterResultado(e.target.value)}
+                        options={[
+                          { value: '', label: 'Todos' },
+                          { value: 'aprobado', label: 'Aprobado' },
+                          { value: 'con_hallazgos', label: 'Con hallazgos' },
+                        ]}
+                      />
+                    </div>
+                  </div>
 
-      {/* Modal de Aprobación & Sello Digital */}
-      <AprobacionModal
-        inspeccion={selectedInspeccion}
-        isOpen={isAprobacionOpen}
-        onClose={() => {
-          setIsAprobacionOpen(false);
-          setSelectedInspeccion(null);
-        }}
-        onApproved={handleApprovedSuccess}
-      />
+                  <div className="border border-[#E5E7EB] rounded-container overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="table-industrial">
+                        <thead>
+                          <tr>
+                            <th>N° Insp.</th>
+                            <th>Fecha</th>
+                            <th>Placa</th>
+                            <th>Empresa</th>
+                            <th>Rev.</th>
+                            <th>Estado</th>
+                            <th>Sello</th>
+                            <th className="text-right">Acción</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {inspecciones.length === 0 ? (
+                            <tr>
+                              <td colSpan={8} className="py-10 text-center text-[#9CA3AF] text-sm">
+                                Sin resultados para los filtros seleccionados.
+                              </td>
+                            </tr>
+                          ) : inspecciones.map((ins) => {
+                            const emp = empresas.find((e) => e.id === ins.empresa_contratista_id);
+                            const placa = ins.vehiculo?.patente || ins.vehiculo_patente || ins.vehiculo_id;
+                            const estadoVariant: any = {
+                              aprobado: 'apto',
+                              con_hallazgos: 'no_apto',
+                              pendiente_aprobacion: 'revision',
+                              en_revision: 'revision',
+                            };
+                            return (
+                              <tr key={ins.id}>
+                                <td className="font-mono text-xs font-semibold">N°{ins.numero_inspeccion}</td>
+                                <td className="font-mono text-xs text-[#6B7280]">
+                                  {new Date(ins.fecha).toLocaleDateString('es-CO')}
+                                </td>
+                                <td className="font-semibold text-sm">{placa}</td>
+                                <td className="text-xs text-[#6B7280]">{emp?.nombre || ins.empresa_contratista_nombre || '—'}</td>
+                                <td className="font-mono text-xs text-[#9CA3AF]">R{ins.numero_revision}</td>
+                                <td>
+                                  <Badge variant={estadoVariant[ins.estado] ?? 'neutral'}>
+                                    {ins.estado.replace(/_/g, ' ')}
+                                  </Badge>
+                                </td>
+                                <td>
+                                  {ins.sello_url ? (
+                                    <Badge variant="apto">Emitido</Badge>
+                                  ) : (
+                                    <span className="text-xs text-[#9CA3AF]">Pendiente</span>
+                                  )}
+                                </td>
+                                <td className="text-right">
+                                  <Button variant="ghost" size="sm" onClick={() => handleOpenAprobacionModal(ins)}>
+                                    <Eye className="w-3.5 h-3.5" /> Ver
+                                  </Button>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              )}
 
-      {/* Modal AuditLog JSON */}
-      <Modal
-        isOpen={!!selectedAuditLog}
-        onClose={() => setSelectedAuditLog(null)}
-        title="Detalle JSON de Auditoría"
-      >
-        {selectedAuditLog && (
-          <div className="space-y-3 text-xs">
-            <pre className="p-3 bg-slate-900 text-slate-100 font-mono text-xs rounded-lg overflow-x-auto">
+              {/* ── TAB: VEHÍCULOS ──────────────────────────────── */}
+              {activeTab === 'vehiculos' && (
+                <div>
+                  <div className="mb-4">
+                    <h1 className="text-base font-semibold text-[#111827]">Flota de Vehículos</h1>
+                    <p className="text-sm text-[#6B7280]">Vehículos registrados en el sistema de inspección.</p>
+                  </div>
+                  <VehiculosTable vehiculos={vehiculos} />
+                </div>
+              )}
+
+              {/* ── TAB: AUDITORÍA ──────────────────────────────── */}
+              {activeTab === 'auditoria' && (
+                <div className="space-y-3">
+                  <div>
+                    <h1 className="text-base font-semibold text-[#111827]">Bitácora de Auditoría</h1>
+                    <p className="text-sm text-[#6B7280]">Registro de todas las acciones del sistema.</p>
+                  </div>
+                  <div className="border border-[#E5E7EB] rounded-container overflow-hidden">
+                    <div className="overflow-x-auto">
+                      <table className="table-industrial">
+                        <thead>
+                          <tr>
+                            <th>Fecha / Hora</th>
+                            <th>Acción</th>
+                            <th>Entidad</th>
+                            <th>IP</th>
+                            <th className="text-right">Payload</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {auditLogs.length === 0 ? (
+                            <tr>
+                              <td colSpan={5} className="py-10 text-center text-[#9CA3AF] text-sm">
+                                No hay registros de auditoría.
+                              </td>
+                            </tr>
+                          ) : auditLogs.map((log) => (
+                            <tr key={log.id}>
+                              <td className="font-mono text-xs text-[#6B7280]">
+                                {new Date(log.timestamp).toLocaleString('es-CO')}
+                              </td>
+                              <td className="text-xs font-semibold uppercase tracking-wide">{log.accion}</td>
+                              <td className="text-xs text-[#374151]">{log.entidad}</td>
+                              <td className="font-mono text-xs text-[#9CA3AF]">{log.ip || '—'}</td>
+                              <td className="text-right">
+                                <Button variant="ghost" size="sm" onClick={() => setSelectedAuditLog(log)}>
+                                  <Code className="w-3.5 h-3.5" /> JSON
+                                </Button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
+        {/* Modales */}
+        <AprobacionModal
+          inspeccion={selectedInspeccion}
+          isOpen={isAprobacionOpen}
+          onClose={() => { setIsAprobacionOpen(false); setSelectedInspeccion(null); }}
+          onApproved={handleApprovedSuccess}
+        />
+
+        <Modal
+          isOpen={!!selectedAuditLog}
+          onClose={() => setSelectedAuditLog(null)}
+          title="Detalle de Auditoría"
+          description={selectedAuditLog ? `${selectedAuditLog.accion} · ${selectedAuditLog.entidad}` : undefined}
+          maxWidth="max-w-2xl"
+        >
+          {selectedAuditLog && (
+            <pre className="p-4 bg-[#111827] text-[#F3F4F6] font-mono text-xs rounded-container overflow-x-auto leading-relaxed">
               {JSON.stringify(selectedAuditLog.detalle || {}, null, 2)}
             </pre>
-          </div>
-        )}
-      </Modal>
-    </div>
+          )}
+        </Modal>
+      </AppShell>
+    </>
   );
 };

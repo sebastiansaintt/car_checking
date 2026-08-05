@@ -24,95 +24,93 @@ export const HistorialMantenimiento: React.FC<HistorialMantenimientoProps> = ({
   const getStatusBadge = (estado: string) => {
     switch (estado) {
       case 'completado':
-        return <Badge variant="apto">COMPLETADO</Badge>;
+        return <Badge variant="apto">Completado</Badge>;
       case 'en_progreso':
-        return <Badge variant="regular">EN PROGRESO</Badge>;
+        return <Badge variant="revision">En progreso</Badge>;
       case 'vencido':
-        return <Badge variant="no_apto">VENCIDO</Badge>;
+        return <Badge variant="no_apto">Vencido</Badge>;
       default:
-        return <Badge variant="regular">PENDIENTE</Badge>;
+        return <Badge variant="regular">Pendiente</Badge>;
     }
   };
-
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      title={`Historial de Mantenimiento — ${vehiculo.marca} ${vehiculo.modelo} (${vehiculo.patente})`}
+      title={`Historial · ${vehiculo.marca} ${vehiculo.modelo}`}
+      description={vehiculo.patente}
     >
       <div className="space-y-4 text-xs">
         {/* Resumen del vehículo */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-3 bg-surface-subtle border border-border rounded-input">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 p-3 bg-[#FAFAFA] border border-[#E5E7EB] rounded-container">
           <div>
-            <span className="text-secondary-text block text-[11px]">Kilometraje Actual</span>
-            <span className="font-mono text-primary font-bold">{vehiculo.kilometraje_actual.toLocaleString('es-CL')} Km</span>
+            <span className="text-[#6B7280] block text-[11px]">Kilometraje Actual</span>
+            <span className="font-mono text-[#111827] font-semibold">{vehiculo.kilometraje_actual.toLocaleString('es-CO')} km</span>
           </div>
           <div>
-            <span className="text-secondary-text block text-[11px]">Último Mantenimiento</span>
-            <span className="font-mono text-primary font-medium">
-              {vehiculo.fecha_ultimo_mantenimiento ? new Date(vehiculo.fecha_ultimo_mantenimiento).toLocaleDateString('es-CL') : 'Sin registros'}
+            <span className="text-[#6B7280] block text-[11px]">Último Mantenimiento</span>
+            <span className="font-mono text-[#111827]">
+              {vehiculo.fecha_ultimo_mantenimiento ? new Date(vehiculo.fecha_ultimo_mantenimiento).toLocaleDateString('es-CO') : 'Sin registros'}
             </span>
           </div>
           <div>
-            <span className="text-secondary-text block text-[11px]">Total Mantenimientos</span>
-            <span className="font-bold text-brand">{misMantenimientos.length} órdenes</span>
+            <span className="text-[#6B7280] block text-[11px]">Total Mantenimientos</span>
+            <span className="font-semibold text-[#111827]">{misMantenimientos.length} órdenes</span>
           </div>
         </div>
 
         {/* Timeline de Mantenimientos */}
         {misMantenimientos.length === 0 ? (
-          <div className="p-8 text-center text-secondary-text">
+          <div className="p-8 text-center text-[#9CA3AF]">
             No existen registros de mantenimiento para este vehículo.
           </div>
         ) : (
-          <div className="relative pl-6 space-y-4 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-border">
+          <div className="relative pl-6 space-y-3 before:absolute before:left-2.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-[#E5E7EB]">
             {misMantenimientos.map((m) => (
-              <div key={m.id} className="relative bg-white p-3.5 border border-border rounded-card space-y-2 shadow-xs">
+              <div key={m.id} className="relative bg-white p-3 border border-[#E5E7EB] rounded-container space-y-2">
                 {/* Indicador en la línea de tiempo */}
                 <div className={`absolute -left-[21px] top-4 w-3.5 h-3.5 rounded-full border-2 border-white ${
-                  m.estado === 'completado' ? 'bg-emerald-500' :
-                  m.estado === 'vencido' ? 'bg-red-500' :
-                  m.estado === 'en_progreso' ? 'bg-blue-500' : 'bg-amber-500'
+                  m.estado === 'completado' ? 'bg-[#065F46]' :
+                  m.estado === 'vencido' ? 'bg-[#991B1B]' :
+                  m.estado === 'en_progreso' ? 'bg-[#1E40AF]' : 'bg-[#92400E]'
                 }`} />
 
-                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-2">
+                <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#E5E7EB] pb-2">
                   <div className="flex items-center gap-2">
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                      m.tipo === 'preventivo' ? 'bg-blue-100 text-blue-800' : 'bg-orange-100 text-orange-800'
-                    }`}>
+                    <span className="text-[10px] font-mono font-semibold uppercase text-[#6B7280]">
                       {m.tipo}
                     </span>
-                    <h5 className="font-bold text-primary text-xs">{m.descripcion}</h5>
+                    <h5 className="font-semibold text-[#111827] text-xs">{m.descripcion}</h5>
                   </div>
                   {getStatusBadge(m.estado)}
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-[11px] text-secondary-text pt-1">
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-[11px] text-[#6B7280] pt-1">
                   <div className="flex items-center gap-1.5">
-                    <Calendar className="w-3.5 h-3.5 text-secondary-tertiary" />
-                    <span>Límite: <strong className="text-primary">{new Date(m.fecha_limite).toLocaleDateString('es-CL')}</strong></span>
+                    <Calendar className="w-3.5 h-3.5 text-[#9CA3AF]" />
+                    <span>Límite: <strong className="text-[#111827] font-mono">{new Date(m.fecha_limite).toLocaleDateString('es-CO')}</strong></span>
                   </div>
                   {m.fecha_completado && (
                     <div className="flex items-center gap-1.5">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>Completado: <strong className="text-primary">{new Date(m.fecha_completado).toLocaleDateString('es-CL')}</strong></span>
+                      <CheckCircle2 className="w-3.5 h-3.5 text-[#065F46]" />
+                      <span>Completado: <strong className="text-[#111827] font-mono">{new Date(m.fecha_completado).toLocaleDateString('es-CO')}</strong></span>
                     </div>
                   )}
                   <div className="flex items-center gap-1.5">
-                    <Gauge className="w-3.5 h-3.5 text-secondary-tertiary" />
-                    <span>Km registro: <strong className="font-mono text-primary">{m.kilometraje_al_crear.toLocaleString('es-CL')} Km</strong></span>
+                    <Gauge className="w-3.5 h-3.5 text-[#9CA3AF]" />
+                    <span>Km registro: <strong className="font-mono text-[#111827]">{m.kilometraje_al_crear.toLocaleString('es-CO')} km</strong></span>
                   </div>
                   {m.kilometraje_al_completar && (
                     <div className="flex items-center gap-1.5">
-                      <Gauge className="w-3.5 h-3.5 text-emerald-600" />
-                      <span>Km cierre: <strong className="font-mono text-emerald-700">{m.kilometraje_al_completar.toLocaleString('es-CL')} Km</strong></span>
+                      <Gauge className="w-3.5 h-3.5 text-[#065F46]" />
+                      <span>Km cierre: <strong className="font-mono text-[#065F46]">{m.kilometraje_al_completar.toLocaleString('es-CO')} km</strong></span>
                     </div>
                   )}
                 </div>
 
                 {m.observaciones && (
-                  <p className="p-2 bg-surface-subtle border border-border rounded text-[11px] text-secondary-text italic mt-1">
+                  <p className="p-2 bg-[#FAFAFA] border border-[#E5E7EB] rounded text-[11px] text-[#6B7280] italic mt-1">
                     "{m.observaciones}"
                   </p>
                 )}

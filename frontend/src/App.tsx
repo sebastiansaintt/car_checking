@@ -10,27 +10,22 @@ const NavigationHandler: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-900 text-white">
-        <div className="text-center space-y-3">
-          <div className="w-8 h-8 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-          <p className="text-xs font-semibold text-slate-400">Cargando Sistema de Inspección Sointer Ltda...</p>
+      <div className="min-h-screen flex items-center justify-center bg-[#FAFAFA]">
+        <div className="flex flex-col items-center gap-3">
+          {/* Skeleton pulse en lugar de spinner */}
+          <div className="w-6 h-6 rounded border border-[#E5E7EB] skeleton" />
+          <p className="text-xs text-[#9CA3AF] font-medium tracking-wide">
+            Cargando sistema...
+          </p>
         </div>
       </div>
     );
   }
 
-  if (!user) {
-    return <LoginPage />;
-  }
+  if (!user) return <LoginPage />;
 
-  if (user.rol === 'administrador') {
-    return <AdministradorDashboard />;
-  }
-
-  if (user.rol === 'tecnico_inspector' || user.rol === 'coordinador') {
-    return <TecnicoInspectorDashboard />;
-  }
-
+  if (user.rol === 'administrador') return <AdministradorDashboard />;
+  if (user.rol === 'tecnico_inspector' || user.rol === 'coordinador') return <TecnicoInspectorDashboard />;
   return <JefeInspeccionDashboard />;
 };
 

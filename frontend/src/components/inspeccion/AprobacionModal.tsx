@@ -10,14 +10,7 @@ import { apiFetch } from '../../lib/api';
 import {
   CheckCircle2,
   AlertTriangle,
-  FileCheck,
-  Building2,
-  Truck,
-  UserCheck,
-  Layers,
-  Wrench,
-  Clock,
-  Printer
+  Printer,
 } from 'lucide-react';
 
 interface AprobacionModalProps {
@@ -72,25 +65,27 @@ export const AprobacionModal: React.FC<AprobacionModalProps> = ({
     }
   };
 
+  const placa = inspeccion.vehiculo?.patente || inspeccion.vehiculo_patente || inspeccion.vehiculo_id;
+
   return (
     <>
       <Modal
         isOpen={isOpen}
         onClose={onClose}
-        title={`Revisión & Dictamen de Inspección — N° ${inspeccion.numero_inspeccion}`}
-        maxWidth="4xl"
+        title={`Inspección N° ${inspeccion.numero_inspeccion}`}
+        description={`Revisión y dictamen · ${placa}`}
+        maxWidth="max-w-3xl"
       >
-        <div className="space-y-6 text-xs">
-          {/* Action Bar for Printing Planilla FO-M4-P13-96 */}
-          <div className="flex items-center justify-between p-3 bg-slate-100 rounded-xl border border-slate-200">
-            <span className="text-xs font-semibold text-slate-700">Formulario Oficial FO-M4-P13-96 — Sointer Ltda.</span>
+        <div className="space-y-5 text-xs">
+          {/* Action Bar for Printing */}
+          <div className="flex items-center justify-between px-3 py-2.5 bg-[#FAFAFA] rounded-container border border-[#E5E7EB]">
+            <span className="text-xs font-medium text-[#6B7280]">Formulario FO-M4-P13-96</span>
             <Button
-              variant="outline"
+              variant="secondary"
               size="sm"
               onClick={() => setIsPDFOpen(true)}
-              className="bg-white border-slate-300 text-slate-900 hover:bg-slate-50 font-bold"
             >
-              <Printer className="w-3.5 h-3.5" /> Ver / Imprimir Planilla FO-M4-P13-96
+              <Printer className="w-3.5 h-3.5" /> Ver / Imprimir Planilla
             </Button>
           </div>
 
@@ -105,133 +100,142 @@ export const AprobacionModal: React.FC<AprobacionModalProps> = ({
               aprobadoPorNombre={inspeccion.aprobado_por_id || 'Jefe de Inspección'}
             />
           ) : (
-            <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-amber-500 text-white rounded-lg flex items-center justify-center font-bold">
-                  <Clock className="w-6 h-6" />
-                </div>
-                <div>
-                  <h4 className="text-sm font-bold text-amber-950">Inspección Pendiente de Aprobación Final</h4>
-                  <p className="text-xs text-amber-800">
-                    Revise los hallazgos resueltos y firme como Jefe de Inspección para emitir la certificación oficial de Sointer Ltda.
-                  </p>
-                </div>
+            <div className="flex items-center gap-3 px-3 py-3 bg-[#FFFBEB] border border-[#FDE68A] rounded-container">
+              <div className="text-[#92400E]">
+                <AlertTriangle className="w-4 h-4" />
               </div>
-              <Badge variant="neutral">
-                {inspeccion.estado.toUpperCase().replace('_', ' ')}
+              <div className="flex-1">
+                <p className="text-xs font-semibold text-[#92400E]">Pendiente de Aprobación</p>
+                <p className="text-[11px] text-[#92400E]/70">
+                  Revise los hallazgos y firme como Jefe de Inspección para emitir la certificación.
+                </p>
+              </div>
+              <Badge variant="revision">
+                {inspeccion.estado.replace(/_/g, ' ')}
               </Badge>
             </div>
           )}
 
-          {/* Informacion Header Box */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-3.5 bg-slate-50 border border-slate-200 rounded-xl">
-            <div>
-              <span className="text-slate-500 text-[11px] block font-medium flex items-center gap-1">
-                <Building2 className="w-3 h-3 text-slate-400" /> Empresa Contratista
-              </span>
-              <span className="font-semibold text-slate-900">
-                {inspeccion.empresa_contratista?.nombre || inspeccion.empresa_contratista_nombre || 'Externo / Sointer'}
-              </span>
-            </div>
-
-            <div>
-              <span className="text-slate-500 text-[11px] block font-medium flex items-center gap-1">
-                <Truck className="w-3 h-3 text-slate-400" /> Vehículo / Placa
-              </span>
-              <span className="font-semibold text-slate-900 font-mono">
-                {inspeccion.vehiculo?.patente || inspeccion.vehiculo_patente || inspeccion.vehiculo_id}
-              </span>
-            </div>
-
-            <div>
-              <span className="text-slate-500 text-[11px] block font-medium flex items-center gap-1">
-                <FileCheck className="w-3 h-3 text-slate-400" /> Dictamen General
-              </span>
-              <Badge variant={inspeccion.resultado_general === 'aprobado' ? 'estandar' : 'subestandar'}>
-                {inspeccion.resultado_general.toUpperCase()}
-              </Badge>
-            </div>
-
-            <div>
-              <span className="text-slate-500 text-[11px] block font-medium flex items-center gap-1">
-                <Layers className="w-3 h-3 text-slate-400" /> N° de Revisión
-              </span>
-              <span className="font-semibold text-slate-900 font-mono">
-                Revisión N° {inspeccion.numero_revision}
-              </span>
-            </div>
+          {/* Información de la inspección */}
+          <div className="space-y-3">
+            <table className="table-industrial">
+              <tbody>
+                <tr>
+                  <td className="text-[#6B7280] font-medium w-40">Empresa Contratista</td>
+                  <td className="font-medium">{inspeccion.empresa_contratista?.nombre || inspeccion.empresa_contratista_nombre || 'Sointer'}</td>
+                </tr>
+                <tr>
+                  <td className="text-[#6B7280] font-medium">Vehículo / Placa</td>
+                  <td className="font-mono font-semibold">{placa}</td>
+                </tr>
+                <tr>
+                  <td className="text-[#6B7280] font-medium">Dictamen General</td>
+                  <td>
+                    <Badge variant={inspeccion.resultado_general === 'aprobado' ? 'apto' : 'no_apto'}>
+                      {inspeccion.resultado_general?.replace(/_/g, ' ') ?? '—'}
+                    </Badge>
+                  </td>
+                </tr>
+                <tr>
+                  <td className="text-[#6B7280] font-medium">Revisión</td>
+                  <td className="font-mono">N° {inspeccion.numero_revision}</td>
+                </tr>
+              </tbody>
+            </table>
           </div>
 
           {/* Resumen por Sistemas */}
           {inspeccion.evaluaciones_sistema && inspeccion.evaluaciones_sistema.length > 0 && (
             <div className="space-y-2">
-              <h5 className="font-bold text-slate-900 flex items-center gap-1.5 text-sm">
-                <Layers className="w-4 h-4 text-brand" /> Evaluación por Sistemas (9 Sistemas)
+              <h5 className="text-xs font-semibold text-[#111827] uppercase tracking-wide">
+                Evaluación por Sistemas
               </h5>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                {inspeccion.evaluaciones_sistema.map((evalSys) => (
-                  <div
-                    key={evalSys.id}
-                    className="p-2.5 bg-white border border-slate-200 rounded-lg flex items-center justify-between shadow-xs"
-                  >
-                    <span className="font-medium text-slate-800 truncate pr-2">
-                      {evalSys.sistema?.nombre || evalSys.sistema_nombre || `Sistema #${evalSys.sistema_id}`}
-                    </span>
-                    <Badge variant={evalSys.estado_sistema === 'aprobado' ? 'estandar' : 'subestandar'}>
-                      {evalSys.estado_sistema === 'aprobado' ? 'APROBADO' : 'NO APROBADO'}
-                    </Badge>
-                  </div>
-                ))}
+              <div className="border border-[#E5E7EB] rounded-container overflow-hidden">
+                <table className="table-industrial">
+                  <thead>
+                    <tr>
+                      <th>Sistema</th>
+                      <th className="text-right">Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {inspeccion.evaluaciones_sistema.map((evalSys) => (
+                      <tr key={evalSys.id}>
+                        <td className="font-medium">
+                          {evalSys.sistema?.nombre || evalSys.sistema_nombre || `Sistema #${evalSys.sistema_id}`}
+                        </td>
+                        <td className="text-right">
+                          <Badge variant={evalSys.estado_sistema === 'aprobado' ? 'apto' : 'no_apto'}>
+                            {evalSys.estado_sistema === 'aprobado' ? 'Aprobado' : 'No aprobado'}
+                          </Badge>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}
 
-          {/* Panel de Hallazgos y Correcciones */}
+          {/* Panel de Hallazgos */}
           {inspeccion.hallazgos && inspeccion.hallazgos.length > 0 && (
             <div className="space-y-2">
-              <h5 className="font-bold text-slate-900 flex items-center gap-1.5 text-sm">
-                <Wrench className="w-4 h-4 text-amber-600" /> Registro de Hallazgos y Corrección
+              <h5 className="text-xs font-semibold text-[#111827] uppercase tracking-wide">
+                Registro de Hallazgos
               </h5>
-              <div className="border border-slate-200 rounded-xl overflow-hidden divide-y divide-slate-100 bg-white">
-                {inspeccion.hallazgos.map((hallazgo) => (
-                  <div key={hallazgo.id} className="p-3 flex items-start justify-between gap-3">
-                    <div className="space-y-0.5">
-                      <p className="font-medium text-slate-900">{hallazgo.descripcion}</p>
-                      <span className="text-[11px] text-slate-500 block">
-                        Registrado: {new Date(hallazgo.created_at).toLocaleString('es-CL')}
-                      </span>
-                    </div>
-                    <Badge variant={hallazgo.atendido ? 'estandar' : 'subestandar'}>
-                      {hallazgo.atendido ? 'ATENDIDO / CORREGIDO' : 'PENDIENTE'}
-                    </Badge>
-                  </div>
-                ))}
+              <div className="border border-[#E5E7EB] rounded-container overflow-hidden">
+                <table className="table-industrial">
+                  <thead>
+                    <tr>
+                      <th>Descripción</th>
+                      <th>Fecha</th>
+                      <th className="text-right">Estado</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {inspeccion.hallazgos.map((hallazgo) => (
+                      <tr key={hallazgo.id}>
+                        <td className="font-medium">{hallazgo.descripcion}</td>
+                        <td className="font-mono text-xs text-[#6B7280]">
+                          {new Date(hallazgo.created_at).toLocaleDateString('es-CL')}
+                        </td>
+                        <td className="text-right">
+                          <Badge variant={hallazgo.atendido ? 'apto' : 'no_apto'}>
+                            {hallazgo.atendido ? 'Atendido' : 'Pendiente'}
+                          </Badge>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
           )}
 
-          {/* Firmas de los Técnicos Inspectores */}
+          {/* Firmas de los Técnicos */}
           {inspeccion.firmas_tecnicos && inspeccion.firmas_tecnicos.length > 0 && (
             <div className="space-y-2">
-              <h5 className="font-bold text-slate-900 flex items-center gap-1.5 text-sm">
-                <UserCheck className="w-4 h-4 text-brand" /> Firmas de Técnicos de Inspección
+              <h5 className="text-xs font-semibold text-[#111827] uppercase tracking-wide">
+                Firmas de Técnicos
               </h5>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="border border-[#E5E7EB] rounded-container overflow-hidden divide-y divide-[#F3F4F6]">
                 {inspeccion.firmas_tecnicos.map((firma) => (
-                  <div key={firma.id} className="p-3 bg-white border border-slate-200 rounded-xl text-center">
+                  <div key={firma.id} className="px-4 py-3 flex items-center justify-between gap-3">
+                    <div>
+                      <span className="text-xs font-medium text-[#111827] block">
+                        {firma.usuario?.nombre || firma.nombre_adicional || 'Técnico Inspector'}
+                      </span>
+                      <span className="text-[11px] text-[#9CA3AF]">
+                        {firma.es_aprobador ? 'Jefe de Inspección' : 'Técnico Inspector'}
+                      </span>
+                    </div>
                     {firma.firma_url ? (
-                      <img src={firma.firma_url} alt="Firma" className="h-12 object-contain mx-auto mb-1" />
-                    ) : (
-                      <div className="h-12 flex items-center justify-center text-slate-400 italic text-[10px]">
-                        (Acompañante sin firma)
+                      <div className="bg-white border border-[#E5E7EB] p-1 rounded-input">
+                        <img src={firma.firma_url} alt="Firma" className="h-10 object-contain" />
                       </div>
+                    ) : (
+                      <span className="text-[11px] text-[#9CA3AF] italic">Sin firma</span>
                     )}
-                    <span className="font-semibold text-slate-900 block truncate">
-                      {firma.usuario?.nombre || firma.nombre_adicional || 'Técnico Inspector'}
-                    </span>
-                    <span className="text-[10px] text-slate-500">
-                      {firma.es_aprobador ? 'Jefe de Inspección' : 'Técnico Inspector'}
-                    </span>
                   </div>
                 ))}
               </div>
@@ -240,19 +244,19 @@ export const AprobacionModal: React.FC<AprobacionModalProps> = ({
 
           {/* Sección de Firma del Jefe y Botón de Aprobación */}
           {canApprove && (
-            <div className="p-4 bg-slate-900 text-white rounded-xl space-y-4 shadow-md">
-              <div className="flex items-center gap-2 border-b border-slate-800 pb-3">
-                <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
+            <div className="space-y-4 pt-4 border-t border-[#E5E7EB]">
+              <div className="flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-[#065F46] shrink-0" />
                 <div>
-                  <h4 className="text-sm font-bold text-white">Firma Digital del Jefe de Inspección</h4>
-                  <p className="text-xs text-slate-400">
-                    Trace su firma a continuación para autorizar la liberación del vehículo y emitir el sello digital.
+                  <h4 className="text-xs font-semibold text-[#111827]">Firma Digital del Jefe de Inspección</h4>
+                  <p className="text-[11px] text-[#6B7280]">
+                    Trace su firma para autorizar la liberación y emitir el sello digital.
                   </p>
                 </div>
               </div>
 
               {errorMsg && (
-                <div className="p-3 bg-rose-500/20 border border-rose-500/40 rounded-lg text-rose-300 flex items-center gap-2 text-xs">
+                <div className="p-3 bg-[#FEF2F2] border border-[#FCA5A5] rounded-container text-[#991B1B] flex items-center gap-2 text-xs">
                   <AlertTriangle className="w-4 h-4 shrink-0" />
                   <span>{errorMsg}</span>
                 </div>
@@ -260,8 +264,8 @@ export const AprobacionModal: React.FC<AprobacionModalProps> = ({
 
               <DigitalSignature onSave={(dataUrl) => setFirmaJefeUrl(dataUrl)} />
 
-              <div className="flex justify-end gap-3 pt-2">
-                <Button variant="outline" onClick={onClose} type="button">
+              <div className="flex justify-end gap-3">
+                <Button variant="secondary" onClick={onClose} type="button">
                   Cancelar
                 </Button>
                 <Button
@@ -269,9 +273,8 @@ export const AprobacionModal: React.FC<AprobacionModalProps> = ({
                   onClick={handleAprobar}
                   isLoading={isSubmitting}
                   disabled={!firmaJefeUrl}
-                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
                 >
-                  <CheckCircle2 className="w-4 h-4" /> Aprobar & Emitir Sello Digital
+                  <CheckCircle2 className="w-4 h-4" /> Aprobar y Emitir Sello
                 </Button>
               </div>
             </div>

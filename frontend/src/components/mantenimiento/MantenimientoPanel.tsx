@@ -9,8 +9,7 @@ import { Badge } from '../ui/Badge';
 import { ConfirmDialog } from '../ui/ConfirmDialog';
 import { HistorialMantenimiento } from './HistorialMantenimiento';
 import { ToastNotification } from '../ui/ToastNotification';
-import { PlusCircle, Wrench, History, Filter, RefreshCw, CheckCircle2, Clock } from 'lucide-react';
-
+import { PlusCircle, RefreshCw } from 'lucide-react';
 
 interface MantenimientoPanelProps {
   vehiculos: Vehiculo[];
@@ -73,12 +72,11 @@ export const MantenimientoPanel: React.FC<MantenimientoPanelProps> = ({ vehiculo
     loadData();
   }, [filterVehiculoId, filterEstado, filterTipo]);
 
-  // Manejar apertura de modal de creación con km por defecto
+  // Manejar apertura de modal de creación
   const handleOpenCreate = () => {
     if (vehiculos.length > 0) {
       setSelectedVehiculoId(vehiculos[0].id);
     }
-    // Siguiente semana por defecto
     const nextWeek = new Date();
     nextWeek.setDate(nextWeek.getDate() + 7);
     setFechaLimite(nextWeek.toISOString().slice(0, 10));
@@ -111,7 +109,6 @@ export const MantenimientoPanel: React.FC<MantenimientoPanelProps> = ({ vehiculo
           observaciones
         })
       });
-
 
       setToast({ message: 'Orden de mantenimiento creada exitosamente.', type: 'success' });
       setIsCreateOpen(false);
@@ -157,7 +154,7 @@ export const MantenimientoPanel: React.FC<MantenimientoPanelProps> = ({ vehiculo
       return;
     }
     if (veh && kmNum < veh.kilometraje_actual) {
-      setToast({ message: `El kilometraje (${kmNum} Km) no puede ser menor al actual (${veh.kilometraje_actual} Km).`, type: 'error' });
+      setToast({ message: `El kilometraje (${kmNum} km) no puede ser menor al actual (${veh.kilometraje_actual} km).`, type: 'error' });
       return;
     }
     setShowConfirmComplete(true);
@@ -190,38 +187,27 @@ export const MantenimientoPanel: React.FC<MantenimientoPanelProps> = ({ vehiculo
   const selectedVehiculo = vehiculos.find(v => v.id === selectedVehiculoId);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <ToastNotification message={toast?.message || null} type={toast?.type || 'success'} onClose={() => setToast(null)} />
 
-      {/* Header y Acción Principal */}
-      <div className="bg-white p-4 border border-border rounded-card flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
+      {/* Header editorial */}
+      <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-base font-bold text-primary flex items-center gap-2">
-            <Wrench className="w-5 h-5 text-brand" /> Gestión de Mantenimientos
-          </h2>
-          <p className="text-xs text-secondary-text mt-0.5">
-            Control de mantenimientos preventivos y correctivos de la flota vehicular.
+          <h1 className="text-base font-semibold text-[#111827]">Gestión de Mantenimientos</h1>
+          <p className="text-sm text-[#6B7280]">
+            Control de mantenimientos preventivos y correctivos de la flota.
           </p>
         </div>
         {role === 'coordinador' && (
-          <Button variant="primary" size="md" onClick={handleOpenCreate}>
-            <PlusCircle className="w-4 h-4" /> Crear Orden de Mantenimiento
+          <Button variant="primary" size="sm" onClick={handleOpenCreate}>
+            <PlusCircle className="w-3.5 h-3.5" /> Nueva orden
           </Button>
         )}
       </div>
 
       {/* Filtros */}
-      <div className="bg-white p-4 border border-border rounded-card space-y-3">
-        <div className="flex items-center justify-between border-b border-border pb-3">
-          <div className="flex items-center gap-2 text-xs font-semibold text-primary">
-            <Filter className="w-4 h-4 text-secondary-text" /> Filtros de Búsqueda
-          </div>
-          <Button variant="outline" size="sm" onClick={loadData}>
-            <RefreshCw className="w-3.5 h-3.5" /> Actualizar
-          </Button>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="flex flex-wrap items-end gap-3">
+        <div className="w-52">
           <Select
             label="Vehículo"
             value={filterVehiculoId}
@@ -231,20 +217,24 @@ export const MantenimientoPanel: React.FC<MantenimientoPanelProps> = ({ vehiculo
               ...vehiculos.map(v => ({ value: v.id, label: `${v.patente} — ${v.marca} ${v.modelo}` }))
             ]}
           />
+        </div>
+        <div className="w-44">
           <Select
             label="Estado"
             value={filterEstado}
             onChange={(e) => setFilterEstado(e.target.value)}
             options={[
               { value: '', label: 'Todos los estados' },
-              { value: 'pendiente', label: 'Pendientes' },
-              { value: 'en_progreso', label: 'En Progreso' },
-              { value: 'completado', label: 'Completados' },
-              { value: 'vencido', label: 'Vencidos' }
+              { value: 'pendiente', label: 'Pendiente' },
+              { value: 'en_progreso', label: 'En progreso' },
+              { value: 'completado', label: 'Completado' },
+              { value: 'vencido', label: 'Vencido' }
             ]}
           />
+        </div>
+        <div className="w-44">
           <Select
-            label="Tipo de Mantenimiento"
+            label="Tipo"
             value={filterTipo}
             onChange={(e) => setFilterTipo(e.target.value)}
             options={[
@@ -254,78 +244,76 @@ export const MantenimientoPanel: React.FC<MantenimientoPanelProps> = ({ vehiculo
             ]}
           />
         </div>
+        <Button variant="ghost" size="sm" onClick={loadData}>
+          <RefreshCw className="w-3.5 h-3.5" />
+        </Button>
       </div>
 
       {/* Tabla de Mantenimientos */}
-      <div className="bg-white border border-border rounded-card overflow-hidden">
+      <div className="border border-[#E5E7EB] rounded-container overflow-hidden">
         {loading ? (
-          <div className="p-12 text-center text-sm text-secondary-tertiary">Cargando órdenes de mantenimiento...</div>
+          <div className="p-8 text-center text-xs text-[#9CA3AF]">Cargando órdenes de mantenimiento...</div>
         ) : mantenimientos.length === 0 ? (
-          <div className="p-12 text-center text-sm text-secondary-text">
+          <div className="p-8 text-center text-xs text-[#9CA3AF]">
             No se encontraron órdenes de mantenimiento registradas.
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-surface-subtle border-b border-border text-secondary-text font-medium">
+            <table className="table-industrial">
+              <thead>
                 <tr>
-                  <th className="py-3 px-4">Vehículo</th>
-                  <th className="py-3 px-4">Tipo</th>
-                  <th className="py-3 px-4">Descripción Mantenimiento</th>
-                  <th className="py-3 px-4">Fecha Límite</th>
-                  <th className="py-3 px-4">Km Inicial → Cierre</th>
-                  <th className="py-3 px-4">Estado</th>
-                  <th className="py-3 px-4 text-right">Acciones</th>
+                  <th>Vehículo</th>
+                  <th>Tipo</th>
+                  <th>Descripción</th>
+                  <th>Fecha Límite</th>
+                  <th>Kilometraje</th>
+                  <th>Estado</th>
+                  <th className="text-right">Acción</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border">
+              <tbody>
                 {mantenimientos.map((m) => {
                   const veh = vehiculos.find(v => v.id === m.vehiculo_id);
                   return (
-                    <tr key={m.id} className="hover:bg-gray-50/50 transition-colors">
-                      <td className="py-3 px-4 font-medium text-primary">
+                    <tr key={m.id}>
+                      <td className="font-semibold text-xs text-[#111827]">
                         {m.vehiculo_patente ? `${m.vehiculo_modelo} (${m.vehiculo_patente})` : m.vehiculo_id}
                       </td>
-                      <td className="py-3 px-4">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                          m.tipo === 'preventivo' ? 'bg-blue-100 text-blue-800' : 'bg-orange-100 text-orange-800'
-                        }`}>
-                          {m.tipo}
-                        </span>
+                      <td className="text-xs uppercase tracking-wide text-[#6B7280] font-mono">
+                        {m.tipo}
                       </td>
-                      <td className="py-3 px-4 text-primary font-medium">{m.descripcion}</td>
-                      <td className="py-3 px-4 font-mono text-secondary-text">
-                        {new Date(m.fecha_limite).toLocaleDateString('es-CL')}
+                      <td className="text-xs text-[#111827]">{m.descripcion}</td>
+                      <td className="font-mono text-xs text-[#6B7280]">
+                        {new Date(m.fecha_limite).toLocaleDateString('es-CO')}
                       </td>
-                      <td className="py-3 px-4 font-mono">
-                        {m.kilometraje_al_crear.toLocaleString('es-CL')} Km
-                        {m.kilometraje_al_completar && ` → ${m.kilometraje_al_completar.toLocaleString('es-CL')} Km`}
+                      <td className="font-mono text-xs">
+                        {m.kilometraje_al_crear.toLocaleString('es-CO')} km
+                        {m.kilometraje_al_completar && ` → ${m.kilometraje_al_completar.toLocaleString('es-CO')} km`}
                       </td>
-                      <td className="py-3 px-4">
-                        {m.estado === 'completado' && <Badge variant="apto">COMPLETADO</Badge>}
-                        {m.estado === 'en_progreso' && <Badge variant="regular">EN PROGRESO</Badge>}
-                        {m.estado === 'vencido' && <Badge variant="no_apto">VENCIDO</Badge>}
-                        {m.estado === 'pendiente' && <Badge variant="regular">PENDIENTE</Badge>}
-
+                      <td>
+                        {m.estado === 'completado' && <Badge variant="apto">Completado</Badge>}
+                        {m.estado === 'en_progreso' && <Badge variant="revision">En progreso</Badge>}
+                        {m.estado === 'vencido' && <Badge variant="no_apto">Vencido</Badge>}
+                        {m.estado === 'pendiente' && <Badge variant="regular">Pendiente</Badge>}
                       </td>
-                      <td className="py-3 px-4 text-right space-x-1.5">
+                      <td className="text-right space-x-1">
                         <Button
-                          variant="outline"
+                          variant="ghost"
                           size="sm"
                           onClick={() => setSelectedVehiculoHistorial(veh || { id: m.vehiculo_id, patente: m.vehiculo_patente || 'N/A', marca: m.vehiculo_modelo || '', modelo: '', año: 2024, kilometraje_actual: m.kilometraje_al_crear, estado: 'activo' })}
                         >
-                          <History className="w-3.5 h-3.5" /> Timeline
+                          Historial
                         </Button>
 
                         {role === 'coordinador' && m.estado === 'pendiente' && (
-                          <Button variant="outline" size="sm" onClick={() => handleStartMantenimiento(m)}>
-                            <Clock className="w-3.5 h-3.5" /> Iniciar
+                          <Button variant="secondary" size="sm" onClick={() => handleStartMantenimiento(m)}>
+                            Iniciar
                           </Button>
                         )}
 
                         {role === 'coordinador' && (m.estado === 'pendiente' || m.estado === 'en_progreso' || m.estado === 'vencido') && (
                           <Button variant="primary" size="sm" onClick={() => handleOpenComplete(m)}>
-                            <CheckCircle2 className="w-3.5 h-3.5" /> Completar
+                            Completar
                           </Button>
                         )}
                       </td>
@@ -340,12 +328,12 @@ export const MantenimientoPanel: React.FC<MantenimientoPanelProps> = ({ vehiculo
 
       {/* Modal Crear Orden */}
       <Modal isOpen={isCreateOpen} onClose={() => setIsCreateOpen(false)} title="Crear Orden de Mantenimiento">
-        <form onSubmit={handlePreSubmitCreate} className="space-y-4 text-xs">
+        <form onSubmit={handlePreSubmitCreate} className="space-y-3 text-xs">
           <Select
             label="Vehículo Asignado"
             value={selectedVehiculoId}
             onChange={(e) => setSelectedVehiculoId(e.target.value)}
-            options={vehiculos.map(v => ({ value: v.id, label: `${v.patente} — ${v.marca} ${v.modelo} (${v.kilometraje_actual.toLocaleString('es-CL')} Km)` }))}
+            options={vehiculos.map(v => ({ value: v.id, label: `${v.patente} — ${v.marca} ${v.modelo} (${v.kilometraje_actual.toLocaleString('es-CO')} km)` }))}
           />
 
           <div className="grid grid-cols-2 gap-3">
@@ -354,17 +342,16 @@ export const MantenimientoPanel: React.FC<MantenimientoPanelProps> = ({ vehiculo
               value={tipo}
               onChange={(e) => setTipo(e.target.value as 'preventivo' | 'correctivo')}
               options={[
-                { value: 'preventivo', label: 'Preventivo (Rutina)' },
-                { value: 'correctivo', label: 'Correctivo (Reparación)' }
+                { value: 'preventivo', label: 'Preventivo' },
+                { value: 'correctivo', label: 'Correctivo' }
               ]}
             />
 
             <div>
-              <label className="text-xs font-medium text-primary block mb-1">Fecha Límite</label>
-              <input
+              <Input
+                label="Fecha Límite"
                 type="date"
                 required
-                className="w-full px-3 py-2 text-xs bg-white border border-border rounded-input text-primary focus:outline-none focus:ring-2 focus:ring-brand"
                 value={fechaLimite}
                 onChange={(e) => setFechaLimite(e.target.value)}
                 min={new Date().toISOString().slice(0, 10)}
@@ -375,35 +362,35 @@ export const MantenimientoPanel: React.FC<MantenimientoPanelProps> = ({ vehiculo
           <Input
             label="Mantenimiento a Realizar"
             required
-            placeholder="Ej: Cambio de pastillas de freno y cambio de aceite de motor"
+            placeholder="Ej. Cambio de pastillas de freno y aceite..."
             value={descripcion}
             onChange={(e) => setDescripcion(e.target.value)}
           />
 
           {selectedVehiculo && (
-            <div className="p-3 bg-surface-subtle border border-border rounded-input flex items-center justify-between text-xs">
-              <span className="text-secondary-text">Kilometraje actual registrado:</span>
-              <span className="font-mono font-bold text-primary">{selectedVehiculo.kilometraje_actual.toLocaleString('es-CL')} Km</span>
+            <div className="p-2.5 bg-[#FAFAFA] border border-[#E5E7EB] rounded-container flex items-center justify-between text-xs">
+              <span className="text-[#6B7280]">Kilometraje actual:</span>
+              <span className="font-mono font-semibold text-[#111827]">{selectedVehiculo.kilometraje_actual.toLocaleString('es-CO')} km</span>
             </div>
           )}
 
           <div>
-            <label className="text-xs font-medium text-primary block mb-1">Observaciones Adicionales (Opcional)</label>
+            <label className="text-xs font-medium text-[#374151] block mb-1">Observaciones</label>
             <textarea
               rows={2}
-              className="w-full px-3 py-2 text-xs bg-white border border-border rounded-input text-primary focus:outline-none focus:ring-2 focus:ring-brand"
-              placeholder="Instrucciones especiales para el taller o mecánico..."
+              className="w-full px-3 py-2 text-xs bg-white border border-[#E5E7EB] rounded-input text-[#111827] focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]/10 focus:border-[#1E3A5F]"
+              placeholder="Instrucciones adicionales..."
               value={observaciones}
               onChange={(e) => setObservaciones(e.target.value)}
             />
           </div>
 
-          <div className="pt-3 flex justify-end gap-2 border-t border-border">
-            <Button type="button" variant="outline" size="sm" onClick={() => setIsCreateOpen(false)}>
+          <div className="pt-3 flex justify-end gap-2 border-t border-[#E5E7EB]">
+            <Button type="button" variant="secondary" size="sm" onClick={() => setIsCreateOpen(false)}>
               Cancelar
             </Button>
             <Button type="submit" variant="primary" size="sm">
-              Continuar a Confirmar
+              Continuar
             </Button>
           </div>
         </form>
@@ -414,49 +401,49 @@ export const MantenimientoPanel: React.FC<MantenimientoPanelProps> = ({ vehiculo
         isOpen={showConfirmCreate}
         onClose={() => setShowConfirmCreate(false)}
         onConfirm={handleConfirmCreate}
-        title="Confirmar Creación de Orden de Mantenimiento"
+        title="Confirmar Orden de Mantenimiento"
         message={`¿Confirma programar el mantenimiento ${tipo.toUpperCase()} (${descripcion}) para el vehículo ${selectedVehiculo?.patente || ''} con fecha límite ${fechaLimite}?`}
-        confirmText="Sí, Crear Orden"
-        variant="info"
+        confirmText="Crear Orden"
+        variant="default"
         isLoading={isSubmitting}
       />
 
       {/* Modal Completar Mantenimiento */}
       <Modal isOpen={!!completingMantenimiento} onClose={() => setCompletingMantenimiento(null)} title="Registrar Mantenimiento Completado">
         {completingMantenimiento && (
-          <form onSubmit={handlePreSubmitComplete} className="space-y-4 text-xs">
-            <div className="p-3 bg-surface-subtle border border-border rounded-input space-y-1.5">
-              <div className="flex justify-between font-semibold text-primary">
+          <form onSubmit={handlePreSubmitComplete} className="space-y-3 text-xs">
+            <div className="p-3 bg-[#FAFAFA] border border-[#E5E7EB] rounded-container space-y-1">
+              <div className="flex justify-between font-semibold text-[#111827]">
                 <span>{completingMantenimiento.descripcion}</span>
-                <span className="uppercase text-[10px] px-2 py-0.5 bg-blue-100 text-blue-800 rounded font-bold">{completingMantenimiento.tipo}</span>
+                <Badge variant="regular">{completingMantenimiento.tipo}</Badge>
               </div>
-              <p className="text-[11px] text-secondary-text">
-                Vehículo: {completingMantenimiento.vehiculo_patente} | Fecha Límite: {new Date(completingMantenimiento.fecha_limite).toLocaleDateString('es-CL')}
+              <p className="text-[11px] text-[#6B7280]">
+                Vehículo: {completingMantenimiento.vehiculo_patente} | Fecha Límite: {new Date(completingMantenimiento.fecha_limite).toLocaleDateString('es-CO')}
               </p>
             </div>
 
             <Input
-              label="Kilometraje Actual del Vehículo al Realizar Mantenimiento"
+              label="Kilometraje Actual al Realizar Mantenimiento"
               type="number"
               required
               value={kmCompletar}
               onChange={(e) => setKmCompletar(e.target.value)}
-              placeholder="Ej: 45200"
+              placeholder="Ej. 45200"
             />
 
             <div>
-              <label className="text-xs font-medium text-primary block mb-1">Notas de Cierre de Mantenimiento</label>
+              <label className="text-xs font-medium text-[#374151] block mb-1">Notas de Cierre</label>
               <textarea
                 rows={3}
-                className="w-full px-3 py-2 text-xs bg-white border border-border rounded-input text-primary focus:outline-none focus:ring-2 focus:ring-brand"
-                placeholder="Detalle de trabajos realizados, repuestos cambiados o boletas..."
+                className="w-full px-3 py-2 text-xs bg-white border border-[#E5E7EB] rounded-input text-[#111827] focus:outline-none focus:ring-2 focus:ring-[#1E3A5F]/10 focus:border-[#1E3A5F]"
+                placeholder="Detalle de trabajos realizados, repuestos cambiados..."
                 value={obsCompletar}
                 onChange={(e) => setObsCompletar(e.target.value)}
               />
             </div>
 
-            <div className="pt-3 flex justify-end gap-2 border-t border-border">
-              <Button type="button" variant="outline" size="sm" onClick={() => setCompletingMantenimiento(null)}>
+            <div className="pt-3 flex justify-end gap-2 border-t border-[#E5E7EB]">
+              <Button type="button" variant="secondary" size="sm" onClick={() => setCompletingMantenimiento(null)}>
                 Cancelar
               </Button>
               <Button type="submit" variant="primary" size="sm">
@@ -473,9 +460,9 @@ export const MantenimientoPanel: React.FC<MantenimientoPanelProps> = ({ vehiculo
         onClose={() => setShowConfirmComplete(false)}
         onConfirm={handleConfirmComplete}
         title="Confirmar Cierre de Mantenimiento"
-        message={`¿Confirma registrar la finalización del mantenimiento (${completingMantenimiento?.descripcion}) marcando el nuevo kilometraje del vehículo en ${kmCompletar} Km?`}
-        confirmText="Sí, Marcar Completado"
-        variant="success"
+        message={`¿Confirma registrar la finalización del mantenimiento (${completingMantenimiento?.descripcion}) marcando el nuevo kilometraje del vehículo en ${kmCompletar} km?`}
+        confirmText="Marcar Completado"
+        variant="default"
         isLoading={isSubmitting}
       />
 
