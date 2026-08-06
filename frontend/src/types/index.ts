@@ -1,4 +1,4 @@
-export type Role = 'tecnico_inspector' | 'jefe_inspeccion' | 'administrador' | 'coordinador' | 'gerente';
+export type Role = 'tecnico_inspector' | 'ingeniero' | 'programador' | 'administrador' | 'coordinador' | 'gerente' | 'jefe_inspeccion';
 
 export interface User {
   id: string;
@@ -38,6 +38,19 @@ export interface Vehiculo {
   imagen_url?: string;
   fecha_ultimo_mantenimiento?: string;
   fecha_proximo_mantenimiento?: string;
+}
+
+export interface VehiculoInspeccionado {
+  placa: string;
+  marca: string;
+  modelo: string;
+  año: number;
+  kilometraje: number;
+  total_inspecciones: number;
+  ultima_fecha: string;
+  nombre_tecnico_ultimo?: string;
+  equipo_auxiliar?: string;
+  numero_interno?: string;
 }
 
 export interface CatalogoSistema {
@@ -95,13 +108,6 @@ export interface FirmaTecnico {
   usuario?: User;
 }
 
-export interface Evidencia {
-  id?: string;
-  url: string;
-  checklist_item_id?: string;
-  descripcion?: string;
-}
-
 export interface SelloAprobacionData {
   empresa_nombre: string;
   empresa_nit: string;
@@ -118,6 +124,11 @@ export interface Inspeccion {
   numero_inspeccion: number;
   numero_revision: number;
   inspeccion_previa_id?: string;
+  inspeccion_primaria_id?: string;
+  motivo_actualizacion?: 'correccion_hallazgos' | 'error_registro' | 'reinspeccion_programada' | string;
+  fecha_actualizacion?: string;
+  es_subregistro?: boolean;
+
   vehiculo_id: string;
   vehiculo_patente?: string;
   vehiculo_modelo?: string;
@@ -150,28 +161,7 @@ export interface Inspeccion {
   checklist_items: ChecklistItem[];
   hallazgos?: Hallazgo[];
   firmas_tecnicos?: FirmaTecnico[];
-  evidencias: Evidencia[];
   created_at: string;
-}
-
-export interface Mantenimiento {
-  id: string;
-  vehiculo_id: string;
-  coordinador_id: string;
-  inspeccion_origen_id?: string;
-  tipo: 'preventivo' | 'correctivo';
-  descripcion: string;
-  fecha_limite: string;
-  fecha_completado?: string;
-  kilometraje_al_crear: number;
-  kilometraje_al_completar?: number;
-  estado: 'pendiente' | 'en_progreso' | 'completado' | 'vencido';
-  observaciones?: string;
-  vehiculo_patente?: string;
-  vehiculo_modelo?: string;
-  coordinador_nombre?: string;
-  created_at: string;
-  updated_at?: string;
 }
 
 export interface Notificacion {
