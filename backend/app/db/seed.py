@@ -74,7 +74,7 @@ def seed_database():
             )
             db.add(usuario)
 
-        # 3. Sembrado de los 9 Sistemas de la Planilla FO-M4-P13-96
+        # 3. Sembrado de los 9 Sistemas de la Planilla de Inspección Técnica
         sistemas_data = [
             ("1", "SISTEMA DE DIRECCIÓN", 1),
             ("2", "SISTEMA DE POTENCIA (MOTOR)", 2),

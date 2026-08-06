@@ -158,7 +158,6 @@ export const ChecklistForm: React.FC<ChecklistFormProps> = ({
     }));
   };
 
-  const isSubregistroMode = isEditingMode || !!inspeccionPrimariaId;
   const tieneCualquierSubestandar = Object.values(itemsEvaluation).some(v => v.valor === 'subestandar');
 
   const handleConfirmSubregistroModal = (motivo: string, fechaColombia: string) => {
@@ -324,7 +323,7 @@ export const ChecklistForm: React.FC<ChecklistFormProps> = ({
           <p className="text-xs text-[#9CA3AF] font-medium mb-1">
             {isEditingMode
               ? `Re-inspección · Planilla N° ${initialInspeccionToEdit.numero_inspeccion}`
-              : 'Formato FO-M4-P13-96'}
+              : 'Planilla Oficial de Inspección'}
           </p>
           <h1 className="text-base font-semibold text-[#111827]">
             {isEditingMode ? 'Corregir y Crear Subregistro' : 'Nueva Inspección Técnica'}
@@ -362,7 +361,6 @@ export const ChecklistForm: React.FC<ChecklistFormProps> = ({
                 onChange={e => handlePlacaChange(e.target.value)}
                 placeholder="ABC 123"
                 required
-                disabled={isEditingMode}
               />
               {placaError && (
                 <span className="text-[11px] text-red-500 font-medium block mt-1">{placaError}</span>
@@ -375,7 +373,6 @@ export const ChecklistForm: React.FC<ChecklistFormProps> = ({
                 value={empresaId}
                 onChange={e => setEmpresaId(e.target.value)}
                 required
-                disabled={isSubregistroMode}
                 options={[
                   { value: '', label: 'Elegir contratista' },
                   ...empresas.map(emp => ({ value: emp.id, label: emp.nombre }))
@@ -384,15 +381,15 @@ export const ChecklistForm: React.FC<ChecklistFormProps> = ({
             </div>
 
             <div>
-              <Input label="Marca" value={marca} onChange={e => setMarca(e.target.value)} placeholder="Mazda" required disabled={isSubregistroMode} />
+              <Input label="Marca" value={marca} onChange={e => setMarca(e.target.value)} placeholder="Mazda" required />
             </div>
 
             <div>
-              <Input label="Modelo" value={modelo} onChange={e => setModelo(e.target.value)} placeholder="BT-50" required disabled={isSubregistroMode} />
+              <Input label="Modelo" value={modelo} onChange={e => setModelo(e.target.value)} placeholder="BT-50" required />
             </div>
 
             <div>
-              <Input label="Año" type="number" value={año} onChange={e => setAño(Number(e.target.value))} required disabled={isSubregistroMode} />
+              <Input label="Año" type="number" value={año} onChange={e => setAño(Number(e.target.value))} required />
             </div>
 
             <div>
@@ -402,24 +399,23 @@ export const ChecklistForm: React.FC<ChecklistFormProps> = ({
                 value={kilometraje}
                 onChange={e => setKilometraje(Number(e.target.value))}
                 required
-                disabled={isSubregistroMode}
               />
             </div>
 
             <div>
-              <Input label="Área a Transitar" value={areaTransitar} onChange={e => setAreaTransitar(e.target.value)} placeholder="Industrial" disabled={isSubregistroMode} />
+              <Input label="Área a Transitar" value={areaTransitar} onChange={e => setAreaTransitar(e.target.value)} placeholder="Industrial" />
             </div>
 
             <div>
-              <Input label="Equipo Auxiliar" value={equipoAuxiliar} onChange={e => setEquipoAuxiliar(e.target.value)} placeholder="Winche" disabled={isSubregistroMode} />
+              <Input label="Equipo Auxiliar" value={equipoAuxiliar} onChange={e => setEquipoAuxiliar(e.target.value)} placeholder="Winche" />
             </div>
 
             <div>
-              <Input label="N° Interno" value={numeroInterno} onChange={e => setNumeroInterno(e.target.value)} placeholder="V-102" disabled={isSubregistroMode} />
+              <Input label="N° Interno" value={numeroInterno} onChange={e => setNumeroInterno(e.target.value)} placeholder="V-102" />
             </div>
 
             <div>
-              <Input label="Color" value={color} onChange={e => setColor(e.target.value)} placeholder="Blanco" disabled={isSubregistroMode} />
+              <Input label="Color" value={color} onChange={e => setColor(e.target.value)} placeholder="Blanco" />
             </div>
 
             <div>

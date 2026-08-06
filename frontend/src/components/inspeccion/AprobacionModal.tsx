@@ -79,7 +79,7 @@ export const AprobacionModal: React.FC<AprobacionModalProps> = ({
         <div className="space-y-5 text-xs">
           {/* Action Bar for Printing */}
           <div className="flex items-center justify-between px-3 py-2.5 bg-[#FAFAFA] rounded-container border border-[#E5E7EB]">
-            <span className="text-xs font-medium text-[#6B7280]">Formulario FO-M4-P13-96</span>
+            <span className="text-xs font-medium text-[#6B7280]">Formulario</span>
             <Button
               variant="secondary"
               size="sm"

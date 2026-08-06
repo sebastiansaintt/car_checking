@@ -5,6 +5,7 @@ import { formatFechaColombia } from '../../lib/dateUtils';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
+import { SelloAprobacion } from './SelloAprobacion';
 
 interface InspeccionDetailModalProps {
   isOpen: boolean;
@@ -185,6 +186,26 @@ export const InspeccionDetailModal: React.FC<InspeccionDetailModalProps> = ({
           </div>
         )}
 
+        {/* Firma del Inspector */}
+        <div className="bg-[#FAFAFA] p-3 rounded-container border border-[#E5E7EB] flex items-center justify-between text-xs">
+          <div>
+            <strong className="text-[#6B7280] block mb-1 uppercase tracking-wide">Firma Digital Inspector:</strong>
+            <span className="font-semibold text-[#111827]">{inspeccion.creado_por_nombre || 'Técnico Inspector'}</span>
+            <span className="text-[10px] text-[#6B7280] block">Técnico Inspector Sointer</span>
+          </div>
+          {(inspeccion.firma_url || (inspeccion.firmas_tecnicos && inspeccion.firmas_tecnicos[0]?.firma_url)) ? (
+            <div className="bg-white p-1.5 border border-[#E5E7EB] rounded shadow-sm">
+              <img
+                src={inspeccion.firma_url || inspeccion.firmas_tecnicos?.[0]?.firma_url}
+                alt="Firma del Inspector"
+                className="h-12 object-contain"
+              />
+            </div>
+          ) : (
+            <span className="text-xs text-[#9CA3AF] italic">[Firma registrada en sistema]</span>
+          )}
+        </div>
+
         {/* Observaciones y Mantenimiento Recomendado */}
         {(inspeccion.observaciones || inspeccion.mantenimiento_recomendado) && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
@@ -201,6 +222,21 @@ export const InspeccionDetailModal: React.FC<InspeccionDetailModalProps> = ({
               </div>
             )}
           </div>
+        )}
+
+        {/* Sello de Aprobación Oficial si todos los sistemas están en E o dictamen Aprobado */}
+        {(inspeccion.resultado_general === 'aprobado' ||
+          inspeccion.resultado_general === 'apto' ||
+          inspeccion.estado === 'aprobado' ||
+          (inspeccion.evaluaciones_sistema &&
+           inspeccion.evaluaciones_sistema.length > 0 &&
+           inspeccion.evaluaciones_sistema.every(e => e.estado_sistema === 'aprobado'))) && (
+          <SelloAprobacion
+            numeroInspeccion={inspeccion.numero_inspeccion}
+            fechaCreacion={formatFechaColombia(inspeccion.fecha)}
+            fechaAprobacion={inspeccion.fecha_aprobacion ? formatFechaColombia(inspeccion.fecha_aprobacion) : formatFechaColombia(inspeccion.fecha)}
+            aprobadoPorNombre={inspeccion.aprobado_por_nombre || 'Ingeniero de Calidad'}
+          />
         )}
       </div>
     </Modal>
