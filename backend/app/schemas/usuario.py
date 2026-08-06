@@ -11,7 +11,7 @@ class UsuarioCreate(BaseModel):
     nombre: str = Field(..., min_length=2, max_length=100)
     email: str = Field(..., description="Correo electrónico del usuario")
     password: str = Field(..., min_length=6, description="Contraseña")
-    rol: str = Field("tecnico_inspector", description="Rol del usuario (tecnico_inspector, jefe_inspeccion, administrador)")
+    rol: str = Field("tecnico_inspector", description="Rol del usuario (tecnico_inspector, ingeniero, programador, administrador)")
     cargo: Optional[str] = Field(None, max_length=100)
     firma_url: Optional[str] = Field(None, description="URL o DataURI de la firma del usuario")
 

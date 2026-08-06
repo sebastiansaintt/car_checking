@@ -1,12 +1,13 @@
 import uuid
 from functools import wraps
 from datetime import datetime, date, timedelta, timezone
+from zoneinfo import ZoneInfo
 from typing import Optional, List
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.models.usuario import Usuario
-from app.models.inspeccion import Inspeccion, ChecklistItem, EvidenciaFotografica
+from app.models.inspeccion import Inspeccion, ChecklistItem
 from app.models.evaluacion_sistema import EvaluacionSistema
 from app.models.hallazgo import Hallazgo
 from app.models.firma_tecnico import FirmaTecnico
@@ -36,46 +37,6 @@ from app.domain.inspeccion.gestor_sello import GestorSelloAprobacion
 from app.domain.inspeccion.generador_numero import GeneradorNumeroInspeccion
 
 
-def auditar_correccion_inspeccion(func):
-    """
-    Decorador para auditar y notificar cuando una inspección es corregida y sus hallazgos son resueltos
-    en la misma planilla.
-    """
-    @wraps(func)
-    def wrapper(db: Session, tecnico: Usuario, inspeccion_id: uuid.UUID, *args, **kwargs):
-        resultado: Inspeccion = func(db, tecnico, inspeccion_id, *args, **kwargs)
-        
-        # Registrar auditoría formal del proceso de corrección
-        AuditLogRepository.create_log(
-            db=db,
-            usuario_id=tecnico.id,
-            accion="corregir_reporte_inspeccion",
-            entidad="inspeccion",
-            entidad_id=str(resultado.id),
-            ip="system",
-            detalle={
-                "numero_inspeccion": resultado.numero_inspeccion,
-                "numero_revision": resultado.numero_revision,
-                "dictamen_general": resultado.resultado_general,
-                "estado": resultado.estado,
-                "mensaje": f"Primer reporte de inspección N° {resultado.numero_inspeccion} corregido con éxito en revisión N° {resultado.numero_revision}. Todos los sistemas evaluados en E o N/A. Dictamen: {resultado.resultado_general.upper()}."
-            }
-        )
-
-        # Notificar in-app al Jefe de Inspección
-        NotificacionService.notificar_por_rol(
-            db=db,
-            rol="jefe_inspeccion",
-            tipo="inspeccion_corregida",
-            titulo=f"🛠️ Inspección N°{resultado.numero_inspeccion} Corregida (Revisión N°{resultado.numero_revision})",
-            mensaje=f"Técnico {tecnico.nombre} verificó correcciones del vehículo {resultado.vehiculo.patente if resultado.vehiculo else 'N/A'}. Todos los sistemas evaluados en E o N/A.",
-            referencia_id=str(resultado.id),
-            referencia_tipo="inspeccion"
-        )
-        return resultado
-    return wrapper
-
-
 class InspeccionService:
     @staticmethod
     def create_inspeccion(
@@ -84,11 +45,13 @@ class InspeccionService:
         data: InspeccionCreate
     ) -> Inspeccion:
         """
-        Crea una inspección validando el vehículo (alta dinámica por placa),
-        calculando dictámenes por sistema y general a través de la capa de dominio,
-        generando hallazgos y registrando la firma del técnico logueado y adicionales.
+        Crea una inspección o subregistro validando el vehículo (alta dinámica por placa),
+        calculando dictámenes por sistema y general, generando hallazgos y registrando firmas.
+        Hora en formato America/Bogota (Hora Colombia).
         """
-        # 1. Obtener o crear vehículo por placa (ADJ-01)
+        hora_colombia = datetime.now(ZoneInfo("America/Bogota"))
+
+        # 1. Obtener o crear vehículo por placa
         vehiculo = VehiculoRepository.get_or_create_by_placa(
             db=db,
             placa=data.placa,
@@ -111,7 +74,34 @@ class InspeccionService:
                 detail=f"El kilometraje ingresado ({data.kilometraje} Km) no puede ser menor al kilometraje actual del vehículo ({vehiculo.kilometraje_actual} Km)."
             )
 
-        # 3. Procesar catálogo de ítems y agrupar por sistema
+        # 3. Determinar si es subregistro o registro primario
+        primario_id = data.inspeccion_primaria_id
+        numero_inspeccion = None
+        numero_revision = 1
+
+        if primario_id:
+            primario = InspeccionRepository.get_by_id(db, primario_id)
+            if not primario:
+                raise HTTPException(
+                    status_code=status.HTTP_404_NOT_FOUND,
+                    detail="La inspección primaria especificada no existe."
+                )
+            numero_inspeccion = primario.numero_inspeccion
+            subregistros = InspeccionRepository.get_subregistros_by_primario(db, primario.id)
+            numero_revision = len(subregistros) + 2
+        else:
+            # Si no viene primario_id, verificar si ya existe una primaría previa para esta placa
+            primaria_existente = InspeccionRepository.get_primario_by_placa(db, data.placa)
+            if primaria_existente:
+                primario_id = primaria_existente.id
+                numero_inspeccion = primaria_existente.numero_inspeccion
+                subregistros = InspeccionRepository.get_subregistros_by_primario(db, primaria_existente.id)
+                numero_revision = len(subregistros) + 2
+            else:
+                numero_inspeccion = GeneradorNumeroInspeccion.obtener_siguiente_numero(db)
+                numero_revision = 1
+
+        # 4. Procesar catálogo de ítems y agrupar por sistema
         sistemas_map = {}
         checklist_items = []
         catalog_map = {}
@@ -142,7 +132,7 @@ class InspeccionService:
                 sistemas_map[sys_id] = []
             sistemas_map[sys_id].append(item_domain)
 
-        # 4. Calcular dictamen por sistema y dictamen general usando el Dominio (DDD)
+        # 5. Calcular dictamen por sistema y dictamen general usando el Dominio (DDD)
         evaluaciones_sistema_models = []
         evaluaciones_resultados_domain = []
 
@@ -171,15 +161,18 @@ class InspeccionService:
         evento_inicial = EventoInspeccion.CREAR_CON_HALLAZGOS if dictamen_general == DICTAMEN_CON_HALLAZGOS else EventoInspeccion.CREAR_SIN_HALLAZGOS
         estado_inicial = MaquinaEstadoInspeccion.transicionar(EstadoInspeccion.EN_REVISION.value, evento_inicial.value)
 
-        # 5. Crear la entidad Inspección
+        # 6. Crear la entidad Inspección (Inmutable)
         inspeccion = Inspeccion(
-            numero_inspeccion=GeneradorNumeroInspeccion.obtener_siguiente_numero(db),
-            numero_revision=1,
+            numero_inspeccion=numero_inspeccion,
+            numero_revision=numero_revision,
+            inspeccion_primaria_id=primario_id,
+            motivo_actualizacion=data.motivo_actualizacion,
+            fecha_actualizacion=hora_colombia if primario_id else None,
             vehiculo_id=vehiculo.id,
             empresa_contratista_id=data.empresa_contratista_id or vehiculo.empresa_contratista_id,
             creado_por_id=tecnico.id,
-            fecha=datetime.now(timezone.utc),
-            hora_inspeccion=data.hora_inspeccion or datetime.now().strftime("%H:%M"),
+            fecha=hora_colombia.replace(tzinfo=None),
+            hora_inspeccion=data.hora_inspeccion or hora_colombia.strftime("%H:%M"),
             kilometraje=data.kilometraje,
             area_transitar=data.area_transitar,
             equipo_auxiliar=data.equipo_auxiliar,
@@ -189,26 +182,12 @@ class InspeccionService:
             observaciones=data.observaciones
         )
 
-        # 6. Evidencias fotográficas
-        evidencias = []
-        for ev in data.evidencias:
-            evidencia = EvidenciaFotografica(
-                url=ev.url,
-                descripcion=ev.descripcion
-            )
-            if ev.checklist_item_id:
-                matched_item = catalog_map.get(ev.checklist_item_id)
-                if matched_item:
-                    evidencia.checklist_item = matched_item
-            evidencias.append(evidencia)
-
         # 7. Persistir inspección
         inspeccion = InspeccionRepository.create_inspeccion(
             db=db,
             inspeccion=inspeccion,
             evaluaciones=evaluaciones_sistema_models,
-            items=checklist_items,
-            evidencias=evidencias
+            items=checklist_items
         )
 
         # 8. Generar Hallazgos automáticamente para ítems subestándar (RN-06)
@@ -244,38 +223,42 @@ class InspeccionService:
         # 10. Actualizar kilometraje del vehículo
         VehiculoRepository.update_kilometraje(db, vehiculo, data.kilometraje)
 
-        # 11. Auditoría y Notificaciones
+        # 11. Auditoría y Notificaciones a Programador e Ingeniero
         AuditLogRepository.create_log(
             db=db,
             usuario_id=tecnico.id,
-            accion="crear",
+            accion="crear_subregistro" if primario_id else "crear",
             entidad="inspeccion",
             entidad_id=str(inspeccion.id),
             ip="system",
             detalle={
                 "numero_inspeccion": inspeccion.numero_inspeccion,
+                "numero_revision": inspeccion.numero_revision,
                 "patente": vehiculo.patente,
                 "dictamen_general": dictamen_general,
-                "estado": estado_inicial
+                "estado": estado_inicial,
+                "es_subregistro": primario_id is not None
             }
         )
 
-        icono = "🔴" if dictamen_general == DICTAMEN_CON_HALLAZGOS else "🟡"
-        NotificacionService.notificar_por_rol(
-            db=db,
-            rol="jefe_inspeccion",
-            tipo=f"inspeccion_{dictamen_general}",
-            titulo=f"{icono} Nueva Inspección N°{inspeccion.numero_inspeccion}",
-            mensaje=f"Vehículo {vehiculo.patente} fue inspeccionado por {tecnico.nombre}. Estado: {estado_inicial.upper()}.",
-            referencia_id=str(inspeccion.id),
-            referencia_tipo="inspeccion"
-        )
+        icono = "🔴" if dictamen_general == DICTAMEN_CON_HALLAZGOS else "🟢"
+        tipo_notif = "subregistro" if primario_id else "nueva_inspeccion"
+        
+        for target_role in ["programador", "ingeniero", "jefe_inspeccion"]:
+            NotificacionService.notificar_por_rol(
+                db=db,
+                rol=target_role,
+                tipo=f"inspeccion_{dictamen_general}",
+                titulo=f"{icono} {'Subregistro' if primario_id else 'Nueva Inspección'} N°{inspeccion.numero_inspeccion} (Rev #{inspeccion.numero_revision})",
+                mensaje=f"Vehículo {vehiculo.patente} fue inspeccionado por {tecnico.nombre}. Dictamen: {dictamen_general.upper()}.",
+                referencia_id=str(inspeccion.id),
+                referencia_tipo="inspeccion"
+            )
 
         db.commit()
         return InspeccionRepository.get_by_id(db, inspeccion.id)
 
     @staticmethod
-    @auditar_correccion_inspeccion
     def corregir_inspeccion(
         db: Session,
         tecnico: Usuario,
@@ -283,80 +266,63 @@ class InspeccionService:
         data: InspeccionUpdate
     ) -> Inspeccion:
         """
-        Re-inspección en la MISMA planilla:
-        El técnico verifica físicamente que el conductor corrigió los hallazgos fuera del sistema,
-        edita el reporte original actualizando los ítems a 'estandar' o 'na', incrementa `numero_revision` a 2,
-        marca los hallazgos como atendidos y el decorador audita que el primer reporte fue corregido con éxito.
+        Historial Inmutable (Regla de Oro):
+        Editar = Crear un nuevo subregistro de la cadena. NUNCA sobreescribir in-place.
         """
-        inspeccion = InspeccionRepository.get_by_id(db, inspeccion_id)
-        if not inspeccion:
+        target = InspeccionRepository.get_by_id(db, inspeccion_id)
+        if not target:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="La inspección a corregir no existe."
             )
 
-        # 1. Actualizar ítems del checklist si fueron proporcionados
-        if data.checklist_items:
-            for item_in in data.checklist_items:
-                # Buscar el ítem en la inspección
-                for item_db in inspeccion.checklist_items:
-                    if item_db.catalogo_id == item_in.catalogo_id:
-                        item_db.valor = item_in.valor
-                        if item_in.comentario is not None:
-                            item_db.comentario = item_in.comentario
-                        db.add(item_db)
+        primario_id = target.inspeccion_primaria_id or target.id
+        subregistros = InspeccionRepository.get_subregistros_by_primario(db, primario_id)
+        numero_revision = len(subregistros) + 2
+        hora_colombia = datetime.now(ZoneInfo("America/Bogota"))
 
-        # 2. Marcar todos los hallazgos de la inspección como atendidos
-        hallazgos = HallazgoRepository.get_by_inspeccion(db, inspeccion.id)
-        for h in hallazgos:
-            HallazgoRepository.marcar_atendido(db, h)
+        # Heredar items si no vienen nuevos en el payload
+        items_payload = data.checklist_items
+        if not items_payload:
+            items_payload = [
+                ChecklistItem(
+                    catalogo_id=it.catalogo_id,
+                    valor=it.valor,
+                    comentario=it.comentario
+                ) for it in target.checklist_items
+            ]
 
-        # 3. Recalcular dictamen por sistema y general con el Dominio
-        sistemas_map = {}
-        for item_db in inspeccion.checklist_items:
-            cat_item = item_db.catalogo
-            sys_id = str(cat_item.sistema_id) if cat_item and cat_item.sistema_id else "general"
-            item_domain = ItemEvaluacion(
-                catalogo_id=str(item_db.catalogo_id),
-                valor=item_db.valor,
-                comentario=item_db.comentario or ""
-            )
-            if sys_id not in sistemas_map:
-                sistemas_map[sys_id] = []
-            sistemas_map[sys_id].append(item_domain)
-
-        evaluaciones_resultados_domain = []
-        for eval_model in inspeccion.evaluaciones_sistema:
-            sys_id_str = str(eval_model.sistema_id)
-            items_sys = sistemas_map.get(sys_id_str, [])
-            nuevo_estado_sys = CalculadorDictamen.calcular_estado_sistema(items_sys)
-            eval_model.estado_sistema = nuevo_estado_sys
-            db.add(eval_model)
-
-            evaluaciones_resultados_domain.append(
-                EvaluacionSistemaResultado(
-                    sistema_id=sys_id_str,
-                    nombre_sistema=eval_model.sistema.nombre if eval_model.sistema else "Sistema",
-                    estado_sistema=nuevo_estado_sys,
-                    items=items_sys
-                )
-            )
-
-        nuevo_dictamen_general = CalculadorDictamen.calcular_dictamen_general(evaluaciones_resultados_domain)
-        inspeccion.resultado_general = nuevo_dictamen_general
-        inspeccion.numero_revision += 1  # Incrementa número de revisión en la misma planilla
-
-        # Transicionar estado usando la máquina de estados
-        inspeccion.estado = MaquinaEstadoInspeccion.transicionar(
-            inspeccion.estado,
-            EventoInspeccion.CORREGIR_HALLAZGOS.value
+        # Crear payload de InspeccionCreate para el nuevo subregistro
+        create_payload = InspeccionCreate(
+            placa=target.vehiculo.patente if target.vehiculo else "ABC 123",
+            empresa_contratista_id=target.empresa_contratista_id,
+            marca=target.vehiculo.marca if target.vehiculo else "N/A",
+            modelo=target.vehiculo.modelo if target.vehiculo else "N/A",
+            año=target.vehiculo.año if target.vehiculo else 2020,
+            tipo_vehiculo=target.vehiculo.tipo_vehiculo if target.vehiculo else "Camioneta",
+            numero_interno=target.vehiculo.numero_interno,
+            color=target.vehiculo.color,
+            equipo_auxiliar=target.equipo_auxiliar,
+            area_transitar=target.area_transitar,
+            kilometraje=data.kilometraje if data.kilometraje is not None else target.kilometraje,
+            hora_inspeccion=hora_colombia.strftime("%H:%M"),
+            mantenimiento_recomendado=data.mantenimiento_recomendado or target.mantenimiento_recomendado,
+            observaciones=data.observaciones or target.observaciones,
+            inspeccion_primaria_id=primario_id,
+            motivo_actualizacion=data.motivo_actualizacion or "correccion_hallazgos",
+            fecha_actualizacion=data.fecha_actualizacion or hora_colombia,
+            firma_url=tecnico.firma_url or "https://placeholder.firmas/tecnico.png",
+            checklist_items=items_payload
         )
 
-        if data.observaciones:
-            inspeccion.observaciones = f"{inspeccion.observaciones or ''}\n[Revisión N°{inspeccion.numero_revision}]: {data.observaciones}".strip()
+        subregistro_nuevo = InspeccionService.create_inspeccion(db=db, tecnico=tecnico, data=create_payload)
 
-        InspeccionRepository.save(db, inspeccion)
-        return InspeccionRepository.get_by_id(db, inspeccion.id)
+        # Marcar hallazgos del registro previo como atendidos
+        hallazgos_previos = HallazgoRepository.get_by_inspeccion(db, target.id)
+        for h in hallazgos_previos:
+            HallazgoRepository.marcar_atendido(db, h)
+
+        return subregistro_nuevo
 
     @staticmethod
     def aprobar_inspeccion(
@@ -366,7 +332,7 @@ class InspeccionService:
         data: InspeccionAprobarRequest
     ) -> Inspeccion:
         """
-        RN-11 / ADJ-02: Aprueba la inspección, valida precriterios, genera sello digital
+        Aprueba la inspección, valida precriterios, genera sello digital
         y calcula fecha de próxima revisión (+ 6 meses).
         """
         inspeccion = InspeccionRepository.get_by_id(db, inspeccion_id)

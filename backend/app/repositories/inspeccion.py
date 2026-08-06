@@ -2,10 +2,11 @@ import uuid
 from datetime import datetime, timezone
 from typing import Optional, List
 from sqlalchemy.orm import Session, joinedload
-from app.models.inspeccion import Inspeccion, ChecklistItem, EvidenciaFotografica, CatalogoChecklist
+from app.models.inspeccion import Inspeccion, ChecklistItem, CatalogoChecklist
 from app.models.catalogo_sistema import CatalogoSistema
 from app.models.evaluacion_sistema import EvaluacionSistema
 from app.models.firma_tecnico import FirmaTecnico
+from app.models.vehiculo import Vehiculo
 
 
 class InspeccionRepository:
@@ -20,8 +21,7 @@ class InspeccionRepository:
             joinedload(Inspeccion.evaluaciones_sistema).joinedload(EvaluacionSistema.sistema),
             joinedload(Inspeccion.checklist_items).joinedload(ChecklistItem.catalogo),
             joinedload(Inspeccion.hallazgos),
-            joinedload(Inspeccion.firmas_tecnicos).joinedload(FirmaTecnico.usuario),
-            joinedload(Inspeccion.evidencias)
+            joinedload(Inspeccion.firmas_tecnicos).joinedload(FirmaTecnico.usuario)
         ).filter(
             Inspeccion.id == inspeccion_id,
             Inspeccion.deleted_at.is_(None)
@@ -68,6 +68,24 @@ class InspeccionRepository:
         return query.order_by(Inspeccion.fecha.desc()).offset(skip).limit(limit).all()
 
     @staticmethod
+    def get_subregistros_by_primario(db: Session, primario_id: uuid.UUID) -> List[Inspeccion]:
+        """Obtiene la lista de subregistros pertenecientes a un registro primario."""
+        return db.query(Inspeccion).filter(
+            Inspeccion.inspeccion_primaria_id == primario_id,
+            Inspeccion.deleted_at.is_(None)
+        ).order_by(Inspeccion.created_at.asc()).all()
+
+    @staticmethod
+    def get_primario_by_placa(db: Session, placa: str) -> Optional[Inspeccion]:
+        """Busca el registro primario activo más antiguo para una placa dada (donde inspeccion_primaria_id IS NULL)."""
+        placa_clean = placa.strip().upper()
+        return db.query(Inspeccion).join(Vehiculo).filter(
+            Vehiculo.patente == placa_clean,
+            Inspeccion.inspeccion_primaria_id.is_(None),
+            Inspeccion.deleted_at.is_(None)
+        ).order_by(Inspeccion.created_at.asc()).first()
+
+    @staticmethod
     def get_sistemas_catalog(db: Session) -> List[CatalogoSistema]:
         """Retorna los 9 sistemas maestros ordenados."""
         return db.query(CatalogoSistema).filter(CatalogoSistema.activo == True).order_by(CatalogoSistema.orden.asc()).all()
@@ -87,16 +105,14 @@ class InspeccionRepository:
         db: Session,
         inspeccion: Inspeccion,
         evaluaciones: List[EvaluacionSistema],
-        items: List[ChecklistItem],
-        evidencias: List[EvidenciaFotografica]
+        items: List[ChecklistItem]
     ) -> Inspeccion:
         """
-        Guarda una inspección junto con sus evaluaciones por sistema, checklist items y evidencias.
+        Guarda una inspección junto con sus evaluaciones por sistema y checklist items.
         """
         try:
             inspeccion.evaluaciones_sistema = evaluaciones
             inspeccion.checklist_items = items
-            inspeccion.evidencias = evidencias
             db.add(inspeccion)
             db.commit()
             db.refresh(inspeccion)

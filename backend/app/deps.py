@@ -78,10 +78,20 @@ def get_current_user(
 
     return user
 
+ROLE_ALIASES = {
+    "gerente": ["ingeniero"],
+    "jefe_inspeccion": ["ingeniero"],
+    "coordinador": ["tecnico_inspector"],
+}
+
 class RoleChecker:
     """Verificador de roles del usuario autenticado."""
     def __init__(self, allowed_roles: list[str]):
-        self.allowed_roles = allowed_roles
+        expanded = set(allowed_roles)
+        for alias, targets in ROLE_ALIASES.items():
+            if any(t in allowed_roles for t in targets):
+                expanded.add(alias)
+        self.allowed_roles = list(expanded)
 
     def __call__(self, current_user: Usuario = Depends(get_current_user)) -> Usuario:
         if current_user.rol not in self.allowed_roles:
