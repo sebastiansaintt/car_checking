@@ -8,14 +8,18 @@ from app.core.database import SessionLocal
 from app.models.empresa_contratista import EmpresaContratista
 from app.models.catalogo_sistema import CatalogoSistema
 from app.models.inspeccion import CatalogoChecklist
-from app.models.vehiculo import Vehiculo
 from app.models.usuario import Usuario
 from app.core.security import hash_password
 
 def seed_database():
     db = SessionLocal()
     try:
-        print("Iniciando sembrado de la base de datos...")
+        print("Iniciando depuración completa y nuevo sembrado de la base de datos...")
+
+        # 0. Eliminar todas las filas de todas las tablas en orden de dependencias FK
+        db.execute(sys.modules['sqlalchemy'].text("TRUNCATE audit_logs, notificaciones, firmas_tecnicos, hallazgos, checklist_items, evaluaciones_sistema, inspecciones, vehiculos, empresas_contratistas, usuarios, catalogo_checklist, catalogo_sistemas CASCADE;"))
+        db.commit()
+        print("Todas las tablas han sido vaciadas exitosamente.")
 
         # 1. Sembrado de Empresas Contratistas
         empresas = [
@@ -23,34 +27,32 @@ def seed_database():
             {"nombre": "Servicios Cerrejón Ltda.", "rut": "800.987.654-2", "contacto": "operaciones@cerrejon.com"},
             {"nombre": "Contratistas Mineros del Norte", "rut": "901.555.777-3", "contacto": "flota@minerosnorte.com"}
         ]
-        seeded_empresas_count = 0
-        empresa_map = {}
         for emp in empresas:
-            exists = db.query(EmpresaContratista).filter_by(nombre=emp["nombre"]).first()
-            if not exists:
-                emp_obj = EmpresaContratista(nombre=emp["nombre"], rut=emp["rut"], contacto=emp["contacto"], activo=True)
-                db.add(emp_obj)
-                db.flush()
-                seeded_empresas_count += 1
-                empresa_map[emp["nombre"]] = emp_obj
-            else:
-                empresa_map[emp["nombre"]] = exists
+            emp_obj = EmpresaContratista(nombre=emp["nombre"], rut=emp["rut"], contacto=emp["contacto"], activo=True)
+            db.add(emp_obj)
 
-        # 2. Sembrado de Usuarios (Técnico Inspector, Jefe de Inspección, Administrador y legacy)
+        # 2. Sembrado de Usuarios (4 Roles Principales + Alias Legacy)
         usuarios = [
             {
-                "nombre": "Juan Técnico Inspector",
-                "email": "coordinador@carchecking.com",
-                "password": "coord123",
+                "nombre": "Carlos Técnico Inspector",
+                "email": "inspector@carchecking.com",
+                "password": "inspector123",
                 "rol": "tecnico_inspector",
-                "cargo": "Técnico de Inspección Field"
+                "cargo": "Técnico Inspector de Campo"
             },
             {
-                "nombre": "Marta Jefe Inspección",
-                "email": "gerente@carchecking.com",
-                "password": "gerente123",
-                "rol": "jefe_inspeccion",
-                "cargo": "Jefe de Inspecciones & Control"
+                "nombre": "Marta Ingeniera de Calidad",
+                "email": "ingeniero@carchecking.com",
+                "password": "ingeniero123",
+                "rol": "ingeniero",
+                "cargo": "Ingeniero de Calidad e Inspección"
+            },
+            {
+                "nombre": "Pedro Programador de Operaciones",
+                "email": "programador@carchecking.com",
+                "password": "programador123",
+                "rol": "programador",
+                "cargo": "Programador de Operaciones"
             },
             {
                 "nombre": "Administrador Sointer",
@@ -58,23 +60,34 @@ def seed_database():
                 "password": "admin123",
                 "rol": "administrador",
                 "cargo": "Administrador del Sistema"
+            },
+            # Alias Legacy para compatibilidad
+            {
+                "nombre": "Carlos Inspector (Alias Coordinador)",
+                "email": "coordinador@carchecking.com",
+                "password": "coord123",
+                "rol": "tecnico_inspector",
+                "cargo": "Técnico Inspector (Legacy)"
+            },
+            {
+                "nombre": "Marta Ingeniera (Alias Gerente)",
+                "email": "gerente@carchecking.com",
+                "password": "gerente123",
+                "rol": "ingeniero",
+                "cargo": "Ingeniero (Legacy)"
             }
         ]
 
-        seeded_users_count = 0
         for u in usuarios:
-            exists = db.query(Usuario).filter_by(email=u["email"]).first()
-            if not exists:
-                usuario = Usuario(
-                    nombre=u["nombre"],
-                    email=u["email"],
-                    password_hash=hash_password(u["password"]),
-                    rol=u["rol"],
-                    cargo=u["cargo"],
-                    activo=True
-                )
-                db.add(usuario)
-                seeded_users_count += 1
+            usuario = Usuario(
+                nombre=u["nombre"],
+                email=u["email"],
+                password_hash=hash_password(u["password"]),
+                rol=u["rol"],
+                cargo=u["cargo"],
+                activo=True
+            )
+            db.add(usuario)
 
         # 3. Sembrado de los 9 Sistemas de la Planilla FO-M4-P13-96
         sistemas_data = [
@@ -89,18 +102,12 @@ def seed_database():
             ("9", "RINES Y LLANTAS", 9),
         ]
 
-        seeded_sistemas_count = 0
         sistema_obj_map = {}
         for codigo, nombre, orden in sistemas_data:
-            exists = db.query(CatalogoSistema).filter_by(codigo=codigo).first()
-            if not exists:
-                sys_obj = CatalogoSistema(codigo=codigo, nombre=nombre, orden=orden, activo=True)
-                db.add(sys_obj)
-                db.flush()
-                seeded_sistemas_count += 1
-                sistema_obj_map[codigo] = sys_obj
-            else:
-                sistema_obj_map[codigo] = exists
+            sys_obj = CatalogoSistema(codigo=codigo, nombre=nombre, orden=orden, activo=True)
+            db.add(sys_obj)
+            db.flush()
+            sistema_obj_map[codigo] = sys_obj
 
         # 4. Sembrado del Catálogo de Items por Sistema
         checklist_items = [
@@ -191,23 +198,19 @@ def seed_database():
             ("9", "9.4", "LLANTA DE REPUESTO (Operativa y medida)", "Llanta de auxilio."),
         ]
 
-        seeded_catalog_count = 0
         for sys_code, item_code, nombre, descripcion in checklist_items:
             sys_obj = sistema_obj_map.get(sys_code)
-            exists = db.query(CatalogoChecklist).filter_by(nombre=nombre).first()
-            if not exists:
-                item = CatalogoChecklist(
-                    sistema_id=sys_obj.id if sys_obj else None,
-                    codigo_item=item_code,
-                    nombre=nombre,
-                    descripcion=descripcion,
-                    activo=True
-                )
-                db.add(item)
-                seeded_catalog_count += 1
+            item = CatalogoChecklist(
+                sistema_id=sys_obj.id if sys_obj else None,
+                codigo_item=item_code,
+                nombre=nombre,
+                descripcion=descripcion,
+                activo=True
+            )
+            db.add(item)
 
         db.commit()
-        print(f"Sembrado completado: {seeded_empresas_count} empresas, {seeded_users_count} usuarios, {seeded_sistemas_count} sistemas y {seeded_catalog_count} ítems de checklist agregados.")
+        print("Sembrado completado con éxito. Se han configurado los 4 roles principales y sus credenciales.")
 
     except Exception as e:
         db.rollback()

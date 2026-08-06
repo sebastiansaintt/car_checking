@@ -25,6 +25,7 @@ def upgrade() -> None:
     op.add_column('inspecciones', sa.Column('inspeccion_primaria_id', sa.UUID(), nullable=True))
     op.add_column('inspecciones', sa.Column('motivo_actualizacion', sa.String(length=100), nullable=True))
     op.add_column('inspecciones', sa.Column('fecha_actualizacion', sa.DateTime(), nullable=True))
+    op.alter_column('inspecciones', 'coordinador_id', existing_type=sa.UUID(), nullable=True)
 
     # Foreign key and index
     op.create_foreign_key(

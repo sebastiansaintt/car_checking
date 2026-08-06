@@ -35,6 +35,7 @@ class Inspeccion(Base):
     vehiculo_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("vehiculos.id", ondelete="RESTRICT"), nullable=False)
     empresa_contratista_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("empresas_contratistas.id", ondelete="SET NULL"), nullable=True)
     creado_por_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("usuarios.id", ondelete="RESTRICT"), nullable=False)
+    coordinador_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("usuarios.id", ondelete="SET NULL"), nullable=True)
     
     fecha: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
     hora_inspeccion: Mapped[Optional[str]] = mapped_column(String(10), nullable=True)
@@ -58,10 +59,6 @@ class Inspeccion(Base):
     deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)  # Soft Delete
 
     # Compatibilidad legacy
-    @property
-    def coordinador_id(self) -> uuid.UUID:
-        return self.creado_por_id
-
     @property
     def firma_url(self) -> str:
         # Retorna la firma del aprobador o de la primera firma
