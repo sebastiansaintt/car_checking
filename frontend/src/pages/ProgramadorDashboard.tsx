@@ -91,8 +91,8 @@ export const ProgramadorDashboard: React.FC = () => {
         ) : activeTab === 'inspecciones' ? (
           <div className="p-6 space-y-4">
             <div>
-              <p className="text-xs text-slate-400 font-medium mb-1">Programador de Operaciones</p>
-              <h1 className="text-base font-semibold text-slate-100">Historial Completo de Inspecciones</h1>
+              <p className="text-xs text-[#9CA3AF] font-medium mb-1">Programador de Operaciones</p>
+              <h1 className="text-base font-semibold text-[#111827]">Historial Completo de Inspecciones</h1>
             </div>
             <HistorialConArbol
               inspecciones={inspecciones}
@@ -103,46 +103,58 @@ export const ProgramadorDashboard: React.FC = () => {
           </div>
         ) : activeTab === 'notificaciones' ? (
           <div className="p-6 space-y-4">
-            <h1 className="text-base font-semibold text-slate-100">Notificaciones Recibidas</h1>
+            <div>
+              <p className="text-xs text-[#9CA3AF] font-medium mb-1">Programador de Operaciones</p>
+              <h1 className="text-base font-semibold text-[#111827]">Notificaciones y Novedades</h1>
+            </div>
             <div className="space-y-2">
-              {notificaciones.map((n) => (
-                <div key={n.id} className="bg-slate-900 border border-slate-800 p-4 rounded-xl flex items-start justify-between">
-                  <div>
-                    <h4 className="font-bold text-sm text-slate-200">{n.titulo}</h4>
-                    <p className="text-xs text-slate-400 mt-1">{n.mensaje}</p>
-                    <span className="text-[10px] text-slate-500 font-mono mt-2 block">{formatFechaColombia(n.created_at)}</span>
-                  </div>
-                  {!n.leida && (
-                    <span className="px-2 py-0.5 rounded text-[10px] bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">
-                      No Leída
-                    </span>
-                  )}
+              {notificaciones.length === 0 ? (
+                <div className="border border-[#E5E7EB] bg-white rounded-container p-8 text-center text-[#6B7280]">
+                  No tienes notificaciones pendientes.
                 </div>
-              ))}
+              ) : (
+                notificaciones.map((n) => (
+                  <div key={n.id} className="bg-white border border-[#E5E7EB] p-4 rounded-container flex items-start justify-between shadow-sm">
+                    <div>
+                      <h4 className="font-bold text-sm text-[#111827]">{n.titulo}</h4>
+                      <p className="text-xs text-[#6B7280] mt-1">{n.mensaje}</p>
+                      <span className="text-[10px] text-[#9CA3AF] font-mono mt-2 block">{formatFechaColombia(n.created_at)}</span>
+                    </div>
+                    {!n.leida && (
+                      <span className="px-2 py-0.5 rounded text-[10px] bg-amber-50 text-amber-800 font-bold border border-amber-200">
+                        No Leída
+                      </span>
+                    )}
+                  </div>
+                ))
+              )}
             </div>
           </div>
         ) : (
           <div className="p-6 space-y-4">
-            <h1 className="text-base font-semibold text-slate-100">Vehículos Inspeccionados</h1>
-            <div className="border border-slate-800 rounded-xl overflow-hidden bg-slate-900">
-              <table className="w-full text-left text-xs text-slate-300">
-                <thead className="bg-slate-950 text-slate-400 uppercase font-semibold border-b border-slate-800">
+            <div>
+              <p className="text-xs text-[#9CA3AF] font-medium mb-1">Programador de Operaciones</p>
+              <h1 className="text-base font-semibold text-[#111827]">Vehículos Inspeccionados</h1>
+            </div>
+            <div className="border border-[#E5E7EB] rounded-container overflow-hidden bg-white shadow-sm">
+              <table className="table-industrial">
+                <thead>
                   <tr>
-                    <th className="py-3 px-4">Placa</th>
-                    <th className="py-3 px-4">Marca / Modelo / Año</th>
-                    <th className="py-3 px-4">Último Km</th>
-                    <th className="py-3 px-4">Inspecciones</th>
-                    <th className="py-3 px-4">Última Fecha</th>
+                    <th>Placa</th>
+                    <th>Marca / Modelo / Año</th>
+                    <th>Último Km</th>
+                    <th>Inspecciones</th>
+                    <th>Última Fecha</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800">
+                <tbody>
                   {vehiculos.map((v) => (
-                    <tr key={v.placa} className="hover:bg-slate-800/40">
-                      <td className="py-3 px-4 font-mono font-bold text-slate-100">{v.placa}</td>
-                      <td className="py-3 px-4">{v.marca} {v.modelo} ({v.año})</td>
-                      <td className="py-3 px-4">{v.kilometraje} Km</td>
-                      <td className="py-3 px-4 font-bold text-blue-400">{v.total_inspecciones}</td>
-                      <td className="py-3 px-4 font-mono">{formatFechaColombia(v.ultima_fecha)}</td>
+                    <tr key={v.placa}>
+                      <td className="font-mono font-bold text-sm text-[#111827] uppercase">{v.placa}</td>
+                      <td className="text-xs text-[#374151]">{v.marca} {v.modelo} ({v.año})</td>
+                      <td className="text-xs text-[#374151]">{v.kilometraje} Km</td>
+                      <td className="font-bold text-xs text-[#1E3A5F]">{v.total_inspecciones}</td>
+                      <td className="font-mono text-xs text-[#6B7280]">{formatFechaColombia(v.ultima_fecha)}</td>
                     </tr>
                   ))}
                 </tbody>

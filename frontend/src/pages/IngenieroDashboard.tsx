@@ -9,6 +9,8 @@ import { AprobacionModal } from '../components/inspeccion/AprobacionModal';
 import { PlanillaPDF } from '../components/inspeccion/PlanillaPDF';
 import { Button } from '../components/ui/Button';
 import { Input } from '../components/ui/Input';
+import { Modal } from '../components/ui/Modal';
+import { Badge } from '../components/ui/Badge';
 import { ToastNotification } from '../components/ui/ToastNotification';
 import { formatFechaColombia } from '../lib/dateUtils';
 import { ShieldCheck, ClipboardList, Building2, Truck, Plus, CheckCircle2 } from 'lucide-react';
@@ -160,48 +162,55 @@ export const IngenieroDashboard: React.FC = () => {
         ) : activeTab === 'pendientes' ? (
           <div className="p-6 space-y-5">
             <div>
-              <p className="text-xs text-slate-400 font-medium mb-1">Ingeniero de Calidad</p>
-              <h1 className="text-base font-semibold text-slate-100">Cola de Aprobación y Emisión de Sello</h1>
+              <p className="text-xs text-[#9CA3AF] font-medium mb-1">Ingeniero de Calidad</p>
+              <h1 className="text-base font-semibold text-[#111827]">Cola de Aprobación y Emisión de Sello</h1>
             </div>
 
             {pendientesAprobacion.length === 0 ? (
-              <div className="border border-slate-800 bg-slate-900 rounded-xl p-8 text-center text-slate-400">
+              <div className="border border-[#E5E7EB] bg-white rounded-container p-8 text-center text-[#6B7280]">
                 <CheckCircle2 className="w-10 h-10 mx-auto mb-2 text-emerald-500" />
                 <p className="text-sm font-medium">No hay inspecciones pendientes por aprobación.</p>
               </div>
             ) : (
-              <div className="border border-slate-800 rounded-xl overflow-hidden bg-slate-900 shadow-xl">
-                <table className="w-full text-left text-xs text-slate-300">
-                  <thead className="bg-slate-950 text-slate-400 uppercase font-semibold border-b border-slate-800">
+              <div className="border border-[#E5E7EB] rounded-container overflow-hidden bg-white shadow-sm">
+                <table className="table-industrial">
+                  <thead>
                     <tr>
-                      <th className="py-3 px-4">N° Planilla</th>
-                      <th className="py-3 px-4">Fecha</th>
-                      <th className="py-3 px-4">Placa</th>
-                      <th className="py-3 px-4">Empresa</th>
-                      <th className="py-3 px-4">Dictamen</th>
-                      <th className="py-3 px-4 text-right">Acción</th>
+                      <th>N° Planilla</th>
+                      <th>Fecha</th>
+                      <th>Placa</th>
+                      <th>Empresa</th>
+                      <th>Dictamen</th>
+                      <th className="text-right">Acción</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-800">
-                    {pendientesAprobacion.map((ins) => (
-                      <tr key={ins.id} className="hover:bg-slate-800/40">
-                        <td className="py-3 px-4 font-mono font-bold text-slate-100">#{ins.numero_inspeccion}</td>
-                        <td className="py-3 px-4 font-mono">{formatFechaColombia(ins.fecha)}</td>
-                        <td className="py-3 px-4 font-mono font-bold text-slate-200 uppercase">{ins.vehiculo_patente || ins.vehiculo?.patente}</td>
-                        <td className="py-3 px-4">{ins.empresa_contratista_nombre || 'N/A'}</td>
-                        <td className="py-3 px-4 capitalize font-semibold text-amber-400">{ins.resultado_general}</td>
-                        <td className="py-3 px-4 text-right">
-                          <div className="flex items-center justify-end gap-2">
-                            <Button variant="secondary" size="sm" onClick={() => handleVer(ins)}>
-                              Ver Detalle
-                            </Button>
-                            <Button variant="primary" size="sm" onClick={() => handleIniciarAprobar(ins)}>
-                              <ShieldCheck className="w-3.5 h-3.5" /> Aprobar & Sello
-                            </Button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                  <tbody>
+                    {pendientesAprobacion.map((ins) => {
+                      const esHallazgo = ins.resultado_general === 'con_hallazgos' || ins.resultado_general === 'no_apto';
+                      return (
+                        <tr key={ins.id}>
+                          <td className="font-mono text-xs font-bold text-[#111827]">#{ins.numero_inspeccion}</td>
+                          <td className="font-mono text-xs text-[#6B7280]">{formatFechaColombia(ins.fecha)}</td>
+                          <td className="font-mono font-bold text-sm text-[#111827] uppercase">{ins.vehiculo_patente || ins.vehiculo?.patente}</td>
+                          <td className="text-xs text-[#6B7280]">{ins.empresa_contratista_nombre || 'N/A'}</td>
+                          <td>
+                            <Badge variant={esHallazgo ? 'no_apto' : 'apto'}>
+                              {esHallazgo ? 'Con hallazgos' : 'Aprobado'}
+                            </Badge>
+                          </td>
+                          <td className="text-right">
+                            <div className="flex items-center justify-end gap-2">
+                              <Button variant="secondary" size="sm" onClick={() => handleVer(ins)}>
+                                Ver Detalle
+                              </Button>
+                              <Button variant="primary" size="sm" onClick={() => handleIniciarAprobar(ins)}>
+                                <ShieldCheck className="w-3.5 h-3.5" /> Aprobar & Sello
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
@@ -210,8 +219,8 @@ export const IngenieroDashboard: React.FC = () => {
         ) : activeTab === 'historial' ? (
           <div className="p-6 space-y-4">
             <div>
-              <p className="text-xs text-slate-400 font-medium mb-1">Ingeniero de Calidad</p>
-              <h1 className="text-base font-semibold text-slate-100">Historial de Inspecciones Técnicas</h1>
+              <p className="text-xs text-[#9CA3AF] font-medium mb-1">Ingeniero de Calidad</p>
+              <h1 className="text-base font-semibold text-[#111827]">Historial de Inspecciones Técnicas</h1>
             </div>
             <HistorialConArbol
               inspecciones={inspecciones}
@@ -224,102 +233,107 @@ export const IngenieroDashboard: React.FC = () => {
           <div className="p-6 space-y-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-slate-400 font-medium mb-1">Ingeniero de Calidad</p>
-                <h1 className="text-base font-semibold text-slate-100">Gestión de Empresas Contratistas</h1>
+                <p className="text-xs text-[#9CA3AF] font-medium mb-1">Ingeniero de Calidad</p>
+                <h1 className="text-base font-semibold text-[#111827]">Gestión de Empresas Contratistas</h1>
               </div>
               <Button variant="primary" size="sm" onClick={() => setShowEmpresaModal(true)}>
                 <Plus className="w-4 h-4" /> Agregar Empresa
               </Button>
             </div>
 
-            <div className="border border-slate-800 rounded-xl overflow-hidden bg-slate-900 shadow-xl">
-              <table className="w-full text-left text-xs text-slate-300">
-                <thead className="bg-slate-950 text-slate-400 uppercase font-semibold border-b border-slate-800">
+            <div className="border border-[#E5E7EB] rounded-container overflow-hidden bg-white shadow-sm">
+              <table className="table-industrial">
+                <thead>
                   <tr>
-                    <th className="py-3 px-4">Nombre Empresa</th>
-                    <th className="py-3 px-4">RUT / NIT</th>
-                    <th className="py-3 px-4">Contacto</th>
-                    <th className="py-3 px-4">Estado</th>
-                    <th className="py-3 px-4">Fecha Registro</th>
+                    <th>Nombre Empresa</th>
+                    <th>RUT / NIT</th>
+                    <th>Contacto</th>
+                    <th>Estado</th>
+                    <th>Fecha Registro</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800">
+                <tbody>
                   {empresas.map((emp) => (
-                    <tr key={emp.id} className="hover:bg-slate-800/40">
-                      <td className="py-3 px-4 font-bold text-slate-100">{emp.nombre}</td>
-                      <td className="py-3 px-4 font-mono">{emp.rut || 'N/A'}</td>
-                      <td className="py-3 px-4">{emp.contacto || 'N/A'}</td>
-                      <td className="py-3 px-4">
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${emp.activo ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-400'}`}>
+                    <tr key={emp.id}>
+                      <td className="font-bold text-xs text-[#111827]">{emp.nombre}</td>
+                      <td className="font-mono text-xs text-[#6B7280]">{emp.rut || 'N/A'}</td>
+                      <td className="text-xs text-[#6B7280]">{emp.contacto || 'N/A'}</td>
+                      <td>
+                        <Badge variant={emp.activo ? 'apto' : 'neutral'}>
                           {emp.activo ? 'Activa' : 'Inactiva'}
-                        </span>
+                        </Badge>
                       </td>
-                      <td className="py-3 px-4 font-mono">{formatFechaColombia(emp.created_at)}</td>
+                      <td className="font-mono text-xs text-[#6B7280]">{formatFechaColombia(emp.created_at)}</td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
 
-            {showEmpresaModal && (
-              <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-                <div className="bg-slate-900 border border-slate-800 rounded-xl max-w-md w-full p-6 shadow-2xl space-y-4">
-                  <h3 className="text-base font-bold text-slate-100">Nueva Empresa Contratista</h3>
-                  <form onSubmit={handleCrearEmpresa} className="space-y-3">
-                    <Input
-                      label="Nombre de la Empresa *"
-                      value={empresaNombre}
-                      onChange={(e) => setEmpresaNombre(e.target.value)}
-                      placeholder="Ej. Transporte Minero S.A.S."
-                      required
-                    />
-                    <Input
-                      label="RUT / NIT"
-                      value={empresaRut}
-                      onChange={(e) => setEmpresaRut(e.target.value)}
-                      placeholder="900123456-1"
-                    />
-                    <Input
-                      label="Persona de Contacto"
-                      value={empresaContacto}
-                      onChange={(e) => setEmpresaContacto(e.target.value)}
-                      placeholder="Juan Pérez"
-                    />
-                    <div className="flex gap-2 pt-2">
-                      <Button type="button" variant="secondary" onClick={() => setShowEmpresaModal(false)}>
-                        Cancelar
-                      </Button>
-                      <Button type="submit" variant="primary">
-                        Guardar Empresa
-                      </Button>
-                    </div>
-                  </form>
+            <Modal
+              isOpen={showEmpresaModal}
+              onClose={() => setShowEmpresaModal(false)}
+              title="Nueva Empresa Contratista"
+              maxWidth="max-w-md"
+              footer={
+                <div className="flex gap-2 justify-end w-full">
+                  <Button type="button" variant="secondary" onClick={() => setShowEmpresaModal(false)}>
+                    Cancelar
+                  </Button>
+                  <Button type="submit" variant="primary" form="empresa-form">
+                    Guardar Empresa
+                  </Button>
                 </div>
-              </div>
-            )}
+              }
+            >
+              <form id="empresa-form" onSubmit={handleCrearEmpresa} className="space-y-3">
+                <Input
+                  label="Nombre de la Empresa *"
+                  value={empresaNombre}
+                  onChange={(e) => setEmpresaNombre(e.target.value)}
+                  placeholder="Ej. Transporte Minero S.A.S."
+                  required
+                />
+                <Input
+                  label="RUT / NIT"
+                  value={empresaRut}
+                  onChange={(e) => setEmpresaRut(e.target.value)}
+                  placeholder="900123456-1"
+                />
+                <Input
+                  label="Persona de Contacto"
+                  value={empresaContacto}
+                  onChange={(e) => setEmpresaContacto(e.target.value)}
+                  placeholder="Juan Pérez"
+                />
+              </form>
+            </Modal>
           </div>
         ) : (
           <div className="p-6 space-y-4">
-            <h1 className="text-base font-semibold text-slate-100">Vehículos Inspeccionados</h1>
-            <div className="border border-slate-800 rounded-xl overflow-hidden bg-slate-900">
-              <table className="w-full text-left text-xs text-slate-300">
-                <thead className="bg-slate-950 text-slate-400 uppercase font-semibold border-b border-slate-800">
+            <div>
+              <p className="text-xs text-[#9CA3AF] font-medium mb-1">Ingeniero de Calidad</p>
+              <h1 className="text-base font-semibold text-[#111827]">Vehículos Inspeccionados</h1>
+            </div>
+            <div className="border border-[#E5E7EB] rounded-container overflow-hidden bg-white shadow-sm">
+              <table className="table-industrial">
+                <thead>
                   <tr>
-                    <th className="py-3 px-4">Placa</th>
-                    <th className="py-3 px-4">Marca / Modelo / Año</th>
-                    <th className="py-3 px-4">Último Km</th>
-                    <th className="py-3 px-4">Inspecciones</th>
-                    <th className="py-3 px-4">Última Fecha</th>
+                    <th>Placa</th>
+                    <th>Marca / Modelo / Año</th>
+                    <th>Último Km</th>
+                    <th>Inspecciones</th>
+                    <th>Última Fecha</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-800">
+                <tbody>
                   {vehiculos.map((v) => (
-                    <tr key={v.placa} className="hover:bg-slate-800/40">
-                      <td className="py-3 px-4 font-mono font-bold text-slate-100">{v.placa}</td>
-                      <td className="py-3 px-4">{v.marca} {v.modelo} ({v.año})</td>
-                      <td className="py-3 px-4">{v.kilometraje} Km</td>
-                      <td className="py-3 px-4 font-bold text-blue-400">{v.total_inspecciones}</td>
-                      <td className="py-3 px-4 font-mono">{formatFechaColombia(v.ultima_fecha)}</td>
+                    <tr key={v.placa}>
+                      <td className="font-mono font-bold text-sm text-[#111827] uppercase">{v.placa}</td>
+                      <td className="text-xs text-[#374151]">{v.marca} {v.modelo} ({v.año})</td>
+                      <td className="text-xs text-[#374151]">{v.kilometraje} Km</td>
+                      <td className="font-bold text-xs text-[#1E3A5F]">{v.total_inspecciones}</td>
+                      <td className="font-mono text-xs text-[#6B7280]">{formatFechaColombia(v.ultima_fecha)}</td>
                     </tr>
                   ))}
                 </tbody>

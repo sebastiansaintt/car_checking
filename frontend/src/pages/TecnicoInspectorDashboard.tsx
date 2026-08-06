@@ -227,7 +227,7 @@ export const TecnicoInspectorDashboard: React.FC = () => {
                     </td>
                   </tr>
                   <tr>
-                    <td className="text-[#374151]">Vehículos inspeccionados en sistema</td>
+                    <td className="text-[#374151]">Vehículos inspeccionados</td>
                     <td className="text-right font-semibold tabular-nums">{vehiculosInspeccionados.length}</td>
                   </tr>
                 </tbody>
@@ -254,11 +254,11 @@ export const TecnicoInspectorDashboard: React.FC = () => {
                 <thead className="bg-slate-950 text-slate-400 font-semibold border-b border-slate-800 uppercase">
                   <tr>
                     <th className="py-3 px-4">Placa</th>
-                    <th className="py-3 px-4">Marca / Modelo / Año</th>
+                    <th className="py-3 px-4">Vehículo</th>
                     <th className="py-3 px-4">Último Km</th>
                     <th className="py-3 px-4">Total Inspecciones</th>
                     <th className="py-3 px-4">Última Fecha</th>
-                    <th className="py-3 px-4">Último Técnico</th>
+                    <th className="py-3 px-4">Inspector</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800">

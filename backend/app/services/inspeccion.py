@@ -171,6 +171,7 @@ class InspeccionService:
             vehiculo_id=vehiculo.id,
             empresa_contratista_id=data.empresa_contratista_id or vehiculo.empresa_contratista_id,
             creado_por_id=tecnico.id,
+            coordinador_id=tecnico.id,
             fecha=hora_colombia.replace(tzinfo=None),
             hora_inspeccion=data.hora_inspeccion or hora_colombia.strftime("%H:%M"),
             kilometraje=data.kilometraje,
