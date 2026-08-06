@@ -27,4 +27,3 @@ class Vehiculo(Base):
     # Relaciones
     empresa_contratista = relationship("EmpresaContratista", back_populates="vehiculos")
     inspecciones = relationship("Inspeccion", back_populates="vehiculo")
-    mantenimientos = relationship("Mantenimiento", back_populates="vehiculo")
