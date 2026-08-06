@@ -14,7 +14,7 @@ from app.core.security import hash_password
 def seed_database():
     db = SessionLocal()
     try:
-        print("Iniciando depuración completa y nuevo sembrado de la base de datos...")
+        print("Iniciando depuración completa y sembrado con credenciales oficiales...")
 
         # 0. Eliminar todas las filas de todas las tablas en orden de dependencias FK
         db.execute(sys.modules['sqlalchemy'].text("TRUNCATE audit_logs, notificaciones, firmas_tecnicos, hallazgos, checklist_items, evaluaciones_sistema, inspecciones, vehiculos, empresas_contratistas, usuarios, catalogo_checklist, catalogo_sistemas CASCADE;"))
@@ -31,50 +31,35 @@ def seed_database():
             emp_obj = EmpresaContratista(nombre=emp["nombre"], rut=emp["rut"], contacto=emp["contacto"], activo=True)
             db.add(emp_obj)
 
-        # 2. Sembrado de Usuarios (4 Roles Principales + Alias Legacy)
+        # 2. Sembrado de Usuarios (4 Credenciales Oficiales Únicas)
         usuarios = [
             {
-                "nombre": "Carlos Técnico Inspector",
+                "nombre": "Técnico Inspector",
                 "email": "inspector@carchecking.com",
-                "password": "inspector123",
+                "password": "QrmKv3KPffN6",
                 "rol": "tecnico_inspector",
                 "cargo": "Técnico Inspector de Campo"
             },
             {
-                "nombre": "Marta Ingeniera de Calidad",
+                "nombre": "Ingeniero",
                 "email": "ingeniero@carchecking.com",
-                "password": "ingeniero123",
+                "password": "Js08$LhIDGfq",
                 "rol": "ingeniero",
                 "cargo": "Ingeniero de Calidad e Inspección"
             },
             {
-                "nombre": "Pedro Programador de Operaciones",
+                "nombre": "Programador",
                 "email": "programador@carchecking.com",
-                "password": "programador123",
+                "password": "mtVI7@JT#LuE",
                 "rol": "programador",
                 "cargo": "Programador de Operaciones"
             },
             {
                 "nombre": "Administrador Sointer",
                 "email": "admin@carchecking.com",
-                "password": "admin123",
+                "password": "yhFS8RjHvruP",
                 "rol": "administrador",
                 "cargo": "Administrador del Sistema"
-            },
-            # Alias Legacy para compatibilidad
-            {
-                "nombre": "Carlos Inspector (Alias Coordinador)",
-                "email": "coordinador@carchecking.com",
-                "password": "coord123",
-                "rol": "tecnico_inspector",
-                "cargo": "Técnico Inspector (Legacy)"
-            },
-            {
-                "nombre": "Marta Ingeniera (Alias Gerente)",
-                "email": "gerente@carchecking.com",
-                "password": "gerente123",
-                "rol": "ingeniero",
-                "cargo": "Ingeniero (Legacy)"
             }
         ]
 
@@ -210,7 +195,7 @@ def seed_database():
             db.add(item)
 
         db.commit()
-        print("Sembrado completado con éxito. Se han configurado los 4 roles principales y sus credenciales.")
+        print("Sembrado completado con éxito con las credenciales oficiales finales.")
 
     except Exception as e:
         db.rollback()

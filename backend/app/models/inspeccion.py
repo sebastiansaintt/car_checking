@@ -58,10 +58,34 @@ class Inspeccion(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), onupdate=func.now(), nullable=False)
     deleted_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)  # Soft Delete
 
+    # Propiedades para Pydantic Response Schemas
+    @property
+    def vehiculo_patente(self) -> str | None:
+        return self.vehiculo.patente if self.vehiculo else None
+
+    @property
+    def vehiculo_modelo(self) -> str | None:
+        return f"{self.vehiculo.marca} {self.vehiculo.modelo}" if self.vehiculo else None
+
+    @property
+    def empresa_contratista_nombre(self) -> str | None:
+        return self.empresa_contratista.nombre if self.empresa_contratista else None
+
+    @property
+    def creado_por_nombre(self) -> str | None:
+        return self.creado_por.nombre if self.creado_por else None
+
+    @property
+    def aprobado_por_nombre(self) -> str | None:
+        return self.aprobado_por.nombre if self.aprobado_por else None
+
+    @property
+    def es_subregistro(self) -> bool:
+        return self.inspeccion_primaria_id is not None or self.numero_revision > 1
+
     # Compatibilidad legacy
     @property
     def firma_url(self) -> str:
-        # Retorna la firma del aprobador o de la primera firma
         if self.firmas_tecnicos:
             for f in self.firmas_tecnicos:
                 if f.firma_url:

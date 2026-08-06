@@ -14,3 +14,11 @@ class EvaluacionSistema(Base):
     # Relaciones
     inspeccion = relationship("Inspeccion", back_populates="evaluaciones_sistema")
     sistema = relationship("CatalogoSistema", back_populates="evaluaciones")
+
+    @property
+    def sistema_nombre(self) -> str | None:
+        return self.sistema.nombre if self.sistema else None
+
+    @property
+    def sistema_codigo(self) -> str | None:
+        return self.sistema.codigo if self.sistema else None
