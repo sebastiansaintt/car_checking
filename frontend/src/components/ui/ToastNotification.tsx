@@ -26,16 +26,16 @@ export const ToastNotification: React.FC<ToastProps> = ({
 
   return (
     <div
-      className="fixed bottom-6 right-6 z-[9999] animate-fade-in"
+      className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[9999] animate-fade-in max-w-md w-[92vw] sm:w-auto"
       role="alert"
       aria-live="polite"
     >
       <div
         className={[
           'flex items-start gap-3 px-4 py-3',
-          'rounded-card border bg-white shadow-modal',
-          'max-w-sm w-full',
-          isError ? 'border-[#FCA5A5]' : 'border-[#A7F3D0]',
+          'rounded-card border bg-white shadow-2xl',
+          'w-full sm:max-w-md',
+          isError ? 'border-[#FCA5A5] text-[#991B1B]' : 'border-[#A7F3D0] text-[#065F46]',
         ].join(' ')}
       >
         <div className="shrink-0 pt-0.5">
