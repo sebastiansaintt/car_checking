@@ -45,7 +45,9 @@ class InspeccionRepository:
             joinedload(Inspeccion.vehiculo),
             joinedload(Inspeccion.empresa_contratista),
             joinedload(Inspeccion.creado_por),
-            joinedload(Inspeccion.evaluaciones_sistema),
+            joinedload(Inspeccion.aprobado_por),
+            joinedload(Inspeccion.evaluaciones_sistema).joinedload(EvaluacionSistema.sistema),
+            joinedload(Inspeccion.checklist_items).joinedload(ChecklistItem.catalogo),
             joinedload(Inspeccion.hallazgos),
             joinedload(Inspeccion.firmas_tecnicos)
         ).filter(Inspeccion.deleted_at.is_(None))
@@ -70,7 +72,14 @@ class InspeccionRepository:
     @staticmethod
     def get_subregistros_by_primario(db: Session, primario_id: uuid.UUID) -> List[Inspeccion]:
         """Obtiene la lista de subregistros pertenecientes a un registro primario."""
-        return db.query(Inspeccion).filter(
+        return db.query(Inspeccion).options(
+            joinedload(Inspeccion.vehiculo),
+            joinedload(Inspeccion.empresa_contratista),
+            joinedload(Inspeccion.creado_por),
+            joinedload(Inspeccion.evaluaciones_sistema).joinedload(EvaluacionSistema.sistema),
+            joinedload(Inspeccion.checklist_items).joinedload(ChecklistItem.catalogo),
+            joinedload(Inspeccion.hallazgos)
+        ).filter(
             Inspeccion.inspeccion_primaria_id == primario_id,
             Inspeccion.deleted_at.is_(None)
         ).order_by(Inspeccion.created_at.asc()).all()
@@ -79,7 +88,14 @@ class InspeccionRepository:
     def get_primario_by_placa(db: Session, placa: str) -> Optional[Inspeccion]:
         """Busca el registro primario activo más antiguo para una placa dada (donde inspeccion_primaria_id IS NULL)."""
         placa_clean = placa.strip().upper()
-        return db.query(Inspeccion).join(Vehiculo).filter(
+        return db.query(Inspeccion).options(
+            joinedload(Inspeccion.vehiculo),
+            joinedload(Inspeccion.empresa_contratista),
+            joinedload(Inspeccion.creado_por),
+            joinedload(Inspeccion.evaluaciones_sistema).joinedload(EvaluacionSistema.sistema),
+            joinedload(Inspeccion.checklist_items).joinedload(ChecklistItem.catalogo),
+            joinedload(Inspeccion.hallazgos)
+        ).join(Vehiculo).filter(
             Vehiculo.patente == placa_clean,
             Inspeccion.inspeccion_primaria_id.is_(None),
             Inspeccion.deleted_at.is_(None)
