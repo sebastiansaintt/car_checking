@@ -22,12 +22,12 @@ export const PlanillaPDF: React.FC<PlanillaPDFProps> = ({ inspeccion, isOpen, on
   const numIns = inspeccion.numero_inspeccion ? inspeccion.numero_inspeccion.toString().padStart(5, '0') : '00000';
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title={`Planilla Oficial FO-M4-P13-96 — N° ${numIns}`} maxWidth="max-w-5xl">
+    <Modal isOpen={isOpen} onClose={onClose} title={`Planilla Oficial de Inspección — N° ${numIns}`} maxWidth="max-w-5xl">
       <div className="space-y-4">
         {/* Action Bar (Hidden when printing) */}
         <div className="flex items-center justify-between p-3 bg-slate-100 rounded-xl border border-slate-200 print:hidden">
           <div className="text-xs text-slate-600">
-            <span className="font-bold text-slate-900">Formato Oficial FO-M4-P13-96</span> — Formulario de Interventoría de Vehículos
+            <span className="font-bold text-slate-900">Formato Oficial</span> — Formulario de Interventoría de Vehículos
           </div>
           <div className="flex items-center gap-2">
             <Button variant="secondary" size="sm" onClick={onClose}>
@@ -54,7 +54,7 @@ export const PlanillaPDF: React.FC<PlanillaPDFProps> = ({ inspeccion, isOpen, on
                 <span className="block text-[10px] text-slate-600 font-normal">SISTEMA DE GESTIÓN DE CALIDAD E INTERVENTORÍA</span>
               </div>
               <div className="text-[11px] font-mono font-bold text-slate-900">
-                <span className="block text-[9px] text-slate-500 font-sans uppercase">Código: FO-M4-P13-96</span>
+                <span className="block text-[9px] text-slate-500 font-sans uppercase">Código: 4445090</span>
                 <span className="text-emerald-700">No. {numIns}</span>
               </div>
             </div>
@@ -111,7 +111,7 @@ export const PlanillaPDF: React.FC<PlanillaPDFProps> = ({ inspeccion, isOpen, on
           {/* 9 SYSTEMS CHECKLIST TABLE */}
           <div>
             <h4 className="font-extrabold text-slate-900 uppercase text-xs mb-2 border-b-2 border-slate-900 pb-1 flex items-center justify-between">
-              <span>EVALUACIÓN DE LOS 9 SISTEMAS TÉCNICOS (FO-M4-P13-96)</span>
+              <span>EVALUACIÓN DE LOS 9 SISTEMAS TÉCNICOS</span>
               <span className="text-[10px] font-normal text-slate-600 uppercase">Convención: E = Estándar | S = Subestándar | N/A = No Aplica</span>
             </h4>
 
@@ -194,16 +194,16 @@ export const PlanillaPDF: React.FC<PlanillaPDFProps> = ({ inspeccion, isOpen, on
           {/* FIRMAS DE TÉCNICOS INSPECTORES */}
           <div>
             <h4 className="font-extrabold text-slate-900 uppercase text-xs mb-2 border-b-2 border-slate-900 pb-1">
-              FIRMAS DE TÉCNICOS INSPECTORES (HASTA 3 FIRMAS)
+              FIRMA DIGITAL DEL TÉCNICO INSPECTOR
             </h4>
             <div className="grid grid-cols-3 gap-3">
               {inspeccion.firmas_tecnicos && inspeccion.firmas_tecnicos.length > 0 ? (
                 inspeccion.firmas_tecnicos.map((f, i) => (
                   <div key={i} className="border border-slate-300 rounded p-2 text-center bg-slate-50">
                     {f.firma_url ? (
-                      <img src={f.firma_url} alt="Firma Técnico" className="h-12 object-contain mx-auto mb-1" />
+                      <img src={f.firma_url} alt="Firma Técnico" className="h-14 object-contain mx-auto mb-1 bg-white p-1 border rounded" />
                     ) : (
-                      <div className="h-12 flex items-center justify-center text-slate-400 italic text-[10px]">
+                      <div className="h-14 flex items-center justify-center text-slate-400 italic text-[10px]">
                         [Firma autógrafa en físico]
                       </div>
                     )}
@@ -214,15 +214,30 @@ export const PlanillaPDF: React.FC<PlanillaPDFProps> = ({ inspeccion, isOpen, on
                   </div>
                 ))
               ) : (
-                <div className="col-span-3 border border-slate-300 rounded p-3 text-center text-slate-400 italic">
-                  Firma del técnico inspector registrada digitalmente.
+                <div className="col-span-1 border border-slate-300 rounded p-2 text-center bg-slate-50">
+                  {inspeccion.firma_url ? (
+                    <img src={inspeccion.firma_url} alt="Firma Técnico Inspector" className="h-14 object-contain mx-auto mb-1 bg-white p-1 border rounded" />
+                  ) : (
+                    <div className="h-14 flex items-center justify-center text-slate-400 italic text-[10px]">
+                      [Firma Registrada en Sistema]
+                    </div>
+                  )}
+                  <span className="font-bold text-slate-900 block truncate text-[11px]">
+                    {inspeccion.creado_por_nombre || 'Técnico Inspector'}
+                  </span>
+                  <span className="text-[9px] text-slate-500 uppercase font-semibold">Técnico Inspector Sointer</span>
                 </div>
               )}
             </div>
           </div>
 
           {/* SELLO DIGITAL DE APROBACIÓN OFICIAL */}
-          {inspeccion.estado === 'aprobado' && (
+          {(inspeccion.resultado_general === 'aprobado' ||
+            inspeccion.resultado_general === 'apto' ||
+            inspeccion.estado === 'aprobado' ||
+            (inspeccion.evaluaciones_sistema &&
+             inspeccion.evaluaciones_sistema.length > 0 &&
+             inspeccion.evaluaciones_sistema.every(e => e.estado_sistema === 'aprobado'))) && (
             <div className="border-2 border-emerald-700 bg-emerald-50/60 rounded-xl p-4 flex items-center justify-between gap-4">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
@@ -237,10 +252,10 @@ export const PlanillaPDF: React.FC<PlanillaPDFProps> = ({ inspeccion, isOpen, on
                 </div>
               </div>
               <div className="text-center p-2 bg-white rounded border border-emerald-300 shrink-0 min-w-[140px]">
-                <span className="inline-block bg-emerald-700 text-white font-bold text-[10px] px-2 py-0.5 rounded uppercase mb-1">
+                <span className="inline-block bg-emerald-700 text-white font-bold text-[10px] px-2.5 py-0.5 rounded uppercase mb-1">
                   APROBADO
                 </span>
-                <span className="text-[10px] text-slate-900 font-bold block truncate">{inspeccion.aprobado_por_nombre || 'Jefe de Inspección'}</span>
+                <span className="text-[10px] text-slate-900 font-bold block truncate">{inspeccion.aprobado_por_nombre || 'Ingeniero de Calidad'}</span>
                 <span className="text-[8px] text-slate-500 uppercase block">Firma y Certificación</span>
               </div>
             </div>

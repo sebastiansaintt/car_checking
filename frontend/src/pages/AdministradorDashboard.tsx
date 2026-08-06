@@ -307,7 +307,7 @@ export const AdministradorDashboard: React.FC = () => {
                 <div className="space-y-4">
                   <div>
                     <h1 className="text-base font-semibold text-[#111827]">Catálogo de 9 Sistemas</h1>
-                    <p className="text-sm text-[#6B7280]">Estructura oficial planilla de interventoría FO-M4-P13-96.</p>
+                    <p className="text-sm text-[#6B7280]">Estructura oficial planilla de interventoría</p>
                   </div>
                   <div className="border border-[#E5E7EB] rounded-container overflow-hidden">
                     <table className="table-industrial">
