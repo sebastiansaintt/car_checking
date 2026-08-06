@@ -26,10 +26,12 @@ type Tab = 'usuarios' | 'empresas' | 'catalogo' | 'auditoria';
 
 const rolLabel: Record<string, string> = {
   administrador:     'Administrador',
-  jefe_inspeccion:   'Jefe de Inspección',
+  ingeniero:         'Ingeniero',
+  programador:       'Programador',
   tecnico_inspector: 'Técnico Inspector',
+  jefe_inspeccion:   'Ingeniero (Jefe)',
   coordinador:       'Técnico Inspector',
-  gerente:           'Jefe de Inspección',
+  gerente:           'Ingeniero (Gerente)',
 };
 
 export const AdministradorDashboard: React.FC = () => {
@@ -417,7 +419,8 @@ export const AdministradorDashboard: React.FC = () => {
               onChange={(e) => setURol(e.target.value)}
               options={[
                 { value: 'tecnico_inspector', label: 'Técnico Inspector' },
-                { value: 'jefe_inspeccion', label: 'Jefe de Inspección' },
+                { value: 'ingeniero', label: 'Ingeniero' },
+                { value: 'programador', label: 'Programador' },
                 { value: 'administrador', label: 'Administrador' },
               ]}
             />
