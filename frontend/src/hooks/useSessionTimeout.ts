@@ -17,8 +17,8 @@ export function useSessionTimeout({
   const [showWarning, setShowWarning] = useState<boolean>(false);
   const [countdown, setCountdown] = useState<number>(warningMinutes * 60);
 
-  const warningTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const countdownIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const warningTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const countdownIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const warningMs = (timeoutMinutes - warningMinutes) * 60 * 1000;
 
@@ -73,7 +73,7 @@ export function useSessionTimeout({
   useEffect(() => {
     if (!isAuthenticated || showWarning) return;
 
-    let debounceTimer: NodeJS.Timeout;
+    let debounceTimer: ReturnType<typeof setTimeout>;
     const handleUserActivity = () => {
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(() => {
