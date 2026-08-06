@@ -29,6 +29,9 @@ class Inspeccion(Base):
 
     numero_revision: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
     inspeccion_previa_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("inspecciones.id", ondelete="SET NULL"), nullable=True)
+    inspeccion_primaria_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("inspecciones.id", ondelete="SET NULL"), nullable=True)
+    motivo_actualizacion: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    fecha_actualizacion: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     vehiculo_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("vehiculos.id", ondelete="RESTRICT"), nullable=False)
     empresa_contratista_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("empresas_contratistas.id", ondelete="SET NULL"), nullable=True)
     creado_por_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("usuarios.id", ondelete="RESTRICT"), nullable=False)
@@ -75,16 +78,17 @@ class Inspeccion(Base):
     coordinador = relationship("Usuario", foreign_keys=[creado_por_id], overlaps="creado_por,inspecciones")
     aprobado_por = relationship("Usuario", foreign_keys=[aprobado_por_id])
     
-    inspeccion_previa = relationship("Inspeccion", remote_side=[id], backref="revisiones")
+    inspeccion_previa = relationship("Inspeccion", remote_side=[id], foreign_keys=[inspeccion_previa_id], backref="revisiones")
+    inspeccion_primaria = relationship("Inspeccion", remote_side=[id], foreign_keys=[inspeccion_primaria_id], backref="subregistros")
     evaluaciones_sistema = relationship("EvaluacionSistema", back_populates="inspeccion", cascade="all, delete-orphan")
     checklist_items = relationship("ChecklistItem", back_populates="inspeccion", cascade="all, delete-orphan")
     hallazgos = relationship("Hallazgo", back_populates="inspeccion", cascade="all, delete-orphan")
     firmas_tecnicos = relationship("FirmaTecnico", back_populates="inspeccion", cascade="all, delete-orphan")
-    evidencias = relationship("EvidenciaFotografica", back_populates="inspeccion", cascade="all, delete-orphan")
 
     __table_args__ = (
         Index("idx_inspeccion_vehiculo_fecha", "vehiculo_id", "fecha"),
         Index("idx_inspeccion_estado", "estado"),
+        Index("idx_inspeccion_primaria", "inspeccion_primaria_id"),
     )
 
 
@@ -100,23 +104,8 @@ class ChecklistItem(Base):
     # Relaciones
     inspeccion = relationship("Inspeccion", back_populates="checklist_items")
     catalogo = relationship("CatalogoChecklist")
-    evidencias = relationship("EvidenciaFotografica", back_populates="checklist_item")
 
     @property
     def catalogo_nombre(self) -> str | None:
         return self.catalogo.nombre if self.catalogo else None
 
-
-class EvidenciaFotografica(Base):
-    __tablename__ = "evidencias_fotograficas"
-
-    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    inspeccion_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("inspecciones.id", ondelete="CASCADE"), nullable=False)
-    checklist_item_id: Mapped[Optional[uuid.UUID]] = mapped_column(ForeignKey("checklist_items.id", ondelete="SET NULL"), nullable=True)
-    url: Mapped[str] = mapped_column(Text, nullable=False)
-    descripcion: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, server_default=func.now(), nullable=False)
-
-    # Relaciones
-    inspeccion = relationship("Inspeccion", back_populates="evidencias")
-    checklist_item = relationship("ChecklistItem", back_populates="evidencias")
