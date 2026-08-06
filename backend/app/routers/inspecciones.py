@@ -1,12 +1,12 @@
 import os
 import uuid
 import json
-import shutil
 import logging
 from typing import Optional, List
 from datetime import datetime
-from fastapi import APIRouter, Depends, Header, HTTPException, status, Request, File, UploadFile
-from sqlalchemy.orm import Session
+from fastapi import APIRouter, Depends, Header, HTTPException, status, Request
+from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import func
 import redis
 
 logger = logging.getLogger("uvicorn.error")
@@ -15,6 +15,8 @@ from app.core.database import get_db
 from app.core.redis_client import get_redis
 from app.deps import get_current_user, require_role
 from app.models.usuario import Usuario
+from app.models.inspeccion import Inspeccion
+from app.models.vehiculo import Vehiculo
 from app.schemas.inspeccion import (
     CatalogoSistemaResponse,
     CatalogoChecklistResponse,
@@ -25,15 +27,14 @@ from app.schemas.inspeccion import (
     SegundaRevisionRequest,
     HallazgoResponse,
     HallazgoUpdate,
-    PresignedUrlRequest,
-    PresignedUrlResponse
+    CheckPlacaResponse,
+    VehiculoInspeccionadoResponse
 )
 from app.services.inspeccion import InspeccionService
 from app.repositories.inspeccion import InspeccionRepository
 
 router = APIRouter(prefix="/inspecciones", tags=["Inspecciones"])
 
-UPLOAD_DIR = "static/uploads"
 
 @router.get("/sistemas-catalog", response_model=List[CatalogoSistemaResponse])
 def get_sistemas_catalog(
@@ -43,6 +44,7 @@ def get_sistemas_catalog(
     """Retorna los 9 sistemas maestros del catálogo."""
     return InspeccionRepository.get_sistemas_catalog(db)
 
+
 @router.get("/checklist-catalog", response_model=List[CatalogoChecklistResponse])
 def get_checklist_catalog(
     db: Session = Depends(get_db),
@@ -50,6 +52,62 @@ def get_checklist_catalog(
 ):
     """Retorna los ítems maestros del checklist."""
     return InspeccionRepository.get_checklist_catalog(db)
+
+
+@router.get("/check-placa/{placa}", response_model=CheckPlacaResponse)
+def check_placa(
+    placa: str,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(require_role(["tecnico_inspector", "coordinador", "administrador"]))
+):
+    """
+    Verifica si una placa tiene un registro primario activo registrado previamente.
+    Retorna si existe y los datos de dicho registro primario.
+    """
+    primario = InspeccionRepository.get_primario_by_placa(db, placa)
+    if primario:
+        resp = InspeccionResponse.model_validate(primario)
+        return CheckPlacaResponse(tiene_registro_primario=True, registro_primario=resp)
+    return CheckPlacaResponse(tiene_registro_primario=False, registro_primario=None)
+
+
+@router.get("/vehiculos-inspeccionados", response_model=List[VehiculoInspeccionadoResponse])
+def get_vehiculos_inspeccionados(
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user)
+):
+    """
+    Retorna la lista de vehículos que han sido inspeccionados, con totales y fecha/técnico de la última inspección.
+    """
+    vehiculos = db.query(Vehiculo).join(Inspeccion).filter(Inspeccion.deleted_at.is_(None)).all()
+    
+    resultado = []
+    for v in vehiculos:
+        insps = db.query(Inspeccion).options(joinedload(Inspeccion.creado_por)).filter(
+            Inspeccion.vehiculo_id == v.id,
+            Inspeccion.deleted_at.is_(None)
+        ).order_by(Inspeccion.fecha.desc()).all()
+        
+        if not insps:
+            continue
+
+        ultima = insps[0]
+        resultado.append(
+            VehiculoInspeccionadoResponse(
+                placa=v.patente,
+                marca=v.marca,
+                modelo=v.modelo,
+                año=v.año,
+                kilometraje=ultima.kilometraje,
+                total_inspecciones=len(insps),
+                ultima_fecha=ultima.fecha,
+                nombre_tecnico_ultimo=ultima.creado_por.nombre if ultima.creado_por else "N/A",
+                equipo_auxiliar=ultima.equipo_auxiliar or v.equipo_auxiliar,
+                numero_interno=v.numero_interno
+            )
+        )
+    return resultado
+
 
 @router.get("", response_model=List[InspeccionResponse])
 def get_inspecciones(
@@ -66,7 +124,7 @@ def get_inspecciones(
     current_user: Usuario = Depends(get_current_user)
 ):
     """Lista las inspecciones activas aplicando filtros opcionales."""
-    return InspeccionService.list_inspecciones(
+    inspecciones = InspeccionService.list_inspecciones(
         db=db,
         skip=skip,
         limit=limit,
@@ -78,6 +136,15 @@ def get_inspecciones(
         fecha_inicio=fecha_inicio,
         fecha_fin=fecha_fin
     )
+    
+    # Mapear campo es_subregistro
+    resp_list = []
+    for insp in inspecciones:
+        dto = InspeccionResponse.model_validate(insp)
+        dto.es_subregistro = insp.inspeccion_primaria_id is not None
+        resp_list.append(dto)
+    return resp_list
+
 
 @router.get("/{id}", response_model=InspeccionResponse)
 def get_inspeccion_by_id(
@@ -92,7 +159,10 @@ def get_inspeccion_by_id(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="La inspección seleccionada no existe."
         )
-    return inspeccion
+    dto = InspeccionResponse.model_validate(inspeccion)
+    dto.es_subregistro = inspeccion.inspeccion_primaria_id is not None
+    return dto
+
 
 @router.post("", response_model=InspeccionResponse, status_code=status.HTTP_201_CREATED)
 def create_inspeccion(
@@ -103,9 +173,9 @@ def create_inspeccion(
     current_user: Usuario = Depends(require_role(["tecnico_inspector", "coordinador", "administrador"]))
 ):
     """
-    Crea una nueva inspección técnica.
-    Requiere rol 'tecnico_inspector' (o legacy 'coordinador').
-    Soporta X-Idempotency-Key para prevenir duplicados en envíos offline/PWA.
+    Crea una nueva inspección técnica o subregistro.
+    Requiere rol 'tecnico_inspector'.
+    Soporta X-Idempotency-Key.
     """
     if x_idempotency_key:
         cached_res = None
@@ -126,7 +196,9 @@ def create_inspeccion(
         data=data
     )
 
-    res_obj = InspeccionResponse.model_validate(inspeccion).model_dump(mode="json")
+    res_dto = InspeccionResponse.model_validate(inspeccion)
+    res_dto.es_subregistro = inspeccion.inspeccion_primaria_id is not None
+    res_obj = res_dto.model_dump(mode="json")
 
     if x_idempotency_key:
         try:
@@ -140,6 +212,7 @@ def create_inspeccion(
 
     return res_obj
 
+
 @router.put("/{id}/corregir", response_model=InspeccionResponse)
 def corregir_inspeccion(
     id: uuid.UUID,
@@ -148,119 +221,69 @@ def corregir_inspeccion(
     current_user: Usuario = Depends(require_role(["tecnico_inspector", "coordinador", "administrador"]))
 ):
     """
-    Edita la inspección existente tras verificar corrección física de hallazgos.
-    Actualiza ítems, incrementa número de revisión, atiende hallazgos y audita la corrección con el decorador.
+    Crea una nueva inspección como subregistro para mantener el historial inmutable.
     """
-    return InspeccionService.corregir_inspeccion(
+    subregistro = InspeccionService.corregir_inspeccion(
         db=db,
         tecnico=current_user,
         inspeccion_id=id,
         data=data
     )
+    dto = InspeccionResponse.model_validate(subregistro)
+    dto.es_subregistro = True
+    return dto
+
 
 @router.post("/{id}/aprobar", response_model=InspeccionResponse)
 def aprobar_inspeccion(
     id: uuid.UUID,
     data: InspeccionAprobarRequest,
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(require_role(["jefe_inspeccion", "gerente", "administrador"]))
+    current_user: Usuario = Depends(require_role(["ingeniero", "jefe_inspeccion", "gerente", "administrador"]))
 ):
     """
-    RN-11 / ADJ-02: Emite la aprobación final de la inspección.
-    Genera el sello digital de Sointer Ltda. y calcula la fecha de próxima revisión.
-    Requiere rol 'jefe_inspeccion' (o legacy 'gerente').
+    Emite la aprobación final de la inspección.
+    Requiere rol 'ingeniero' (o legacy 'jefe_inspeccion' / 'gerente').
     """
-    return InspeccionService.aprobar_inspeccion(
+    inspeccion = InspeccionService.aprobar_inspeccion(
         db=db,
         jefe=current_user,
         inspeccion_id=id,
         data=data
     )
+    dto = InspeccionResponse.model_validate(inspeccion)
+    dto.es_subregistro = inspeccion.inspeccion_primaria_id is not None
+    return dto
 
-@router.post("/{id}/segunda-revision", response_model=InspeccionResponse)
-def solicitar_segunda_revision(
-    id: uuid.UUID,
-    req: SegundaRevisionRequest,
-    db: Session = Depends(get_db),
-    current_user: Usuario = Depends(require_role(["jefe_inspeccion", "gerente", "administrador"]))
-):
-    """
-    RN-08 / D-01: Solicita una segunda revisión.
-    Crea una NUEVA entidad Inspeccion vinculada a la anterior (`inspeccion_previa_id`).
-    Requiere rol 'jefe_inspeccion'.
-    """
-    return InspeccionService.solicitar_segunda_revision(
-        db=db,
-        jefe=current_user,
-        inspeccion_id=id,
-        observaciones=req.observaciones
-    )
 
 @router.patch("/hallazgos/{hallazgo_id}/atender", response_model=HallazgoResponse)
 def marcar_hallazgo_atendido(
     hallazgo_id: uuid.UUID,
     req: HallazgoUpdate,
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(require_role(["tecnico_inspector", "coordinador", "jefe_inspeccion", "gerente", "administrador"]))
+    current_user: Usuario = Depends(require_role(["tecnico_inspector", "coordinador", "ingeniero", "jefe_inspeccion", "gerente", "administrador"]))
 ):
-    """
-    RN-06: Marca un hallazgo como atendido.
-    Si se atienden todos los hallazgos de la inspección, cambia su estado a 'pendiente_aprobacion'.
-    """
+    """Marca un hallazgo como atendido."""
     return InspeccionService.marcar_hallazgo_atendido(
         db=db,
         usuario=current_user,
         hallazgo_id=hallazgo_id
     )
 
+
 @router.delete("/{id}", status_code=status.HTTP_200_OK)
 def delete_inspeccion(
     id: uuid.UUID,
     request: Request,
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(require_role(["jefe_inspeccion", "gerente", "administrador"]))
+    current_user: Usuario = Depends(require_role(["administrador"]))
 ):
-    """Realiza el Soft Delete de una inspección."""
-    ip = request.client.host if request.client else "unknown"
-    InspeccionService.delete_inspeccion(
-        db=db,
-        coordinador=current_user,
-        inspeccion_id=id,
-        ip=ip
-    )
-    return {"message": "Inspección eliminada correctamente."}
-
-# Mock presigned URL endpoints
-@router.post("/presigned-url", response_model=PresignedUrlResponse)
-def get_presigned_url(
-    req: PresignedUrlRequest,
-    current_user: Usuario = Depends(get_current_user)
-):
-    ext = os.path.splitext(req.filename)[1]
-    unique_filename = f"{uuid.uuid4()}{ext}"
-
-    return {
-        "upload_url": f"/api/inspecciones/mock-s3-upload?filename={unique_filename}",
-        "file_url": f"/static/uploads/{unique_filename}"
-    }
-
-@router.post("/mock-s3-upload")
-def mock_s3_upload(
-    filename: str,
-    file: UploadFile = File(...),
-    current_user: Usuario = Depends(get_current_user)
-):
-    os.makedirs(UPLOAD_DIR, exist_ok=True)
-    file_path = os.path.join(UPLOAD_DIR, filename)
-    try:
-        with open(file_path, "wb") as buffer:
-            shutil.copyfileobj(file.file, buffer)
-    except Exception as e:
+    """Soft Delete de una inspección. Exclusivo para Administrador."""
+    inspeccion = InspeccionRepository.get_by_id(db, id)
+    if not inspeccion:
         raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error al guardar el archivo: {e}"
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="La inspección a eliminar no existe."
         )
-    finally:
-        file.file.close()
-
-    return {"message": "Archivo subido correctamente", "filename": filename}
+    InspeccionRepository.soft_delete(db, inspeccion)
+    return {"message": "Inspección eliminada correctamente."}

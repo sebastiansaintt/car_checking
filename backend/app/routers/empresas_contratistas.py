@@ -31,7 +31,7 @@ def create_empresa_contratista(
     request: Request,
     data: EmpresaContratistaCreate,
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(require_role(["administrador"]))
+    current_user: Usuario = Depends(require_role(["administrador", "ingeniero", "gerente"]))
 ):
     """Crea una nueva empresa contratista. Exclusivo para 'administrador'."""
     ip = get_client_ip(request)
@@ -43,7 +43,7 @@ def update_empresa_contratista(
     id: uuid.UUID,
     data: EmpresaContratistaUpdate,
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(require_role(["administrador"]))
+    current_user: Usuario = Depends(require_role(["administrador", "ingeniero", "gerente"]))
 ):
     """Edita una empresa contratista. Exclusivo para 'administrador'."""
     ip = get_client_ip(request)

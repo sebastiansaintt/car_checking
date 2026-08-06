@@ -1,7 +1,8 @@
 import uuid
+import re
 from datetime import date, datetime
 from typing import Optional, List
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 # --- Catalog Schemas ---
 class CatalogoSistemaResponse(BaseModel):
@@ -84,27 +85,11 @@ class FirmaTecnicoResponse(BaseModel):
     class Config:
         from_attributes = True
 
-# --- Evidencias Fotográficas ---
-class EvidenciaFotograficaCreate(BaseModel):
-    url: str = Field(..., description="URL de la imagen")
-    checklist_item_id: Optional[uuid.UUID] = Field(None, description="ID del ítem relacionado")
-    descripcion: Optional[str] = Field(None, description="Descripción del daño")
-
-class EvidenciaFotograficaResponse(BaseModel):
-    id: uuid.UUID
-    url: str
-    checklist_item_id: Optional[uuid.UUID] = None
-    descripcion: Optional[str] = None
-    created_at: datetime
-
-    class Config:
-        from_attributes = True
 
 # --- Inspección Requests & Responses ---
 class InspeccionCreate(BaseModel):
-    # Identificación del Vehículo (Alta dinámica por placa - ADJ-01)
-    placa: str = Field(..., min_length=3, max_length=20, description="Placa del vehículo")
-    empresa_contratista_id: Optional[uuid.UUID] = Field(None, description="ID de la empresa contratista propietaria")
+    placa: str = Field(..., description="Placa del vehículo en formato ABC 123")
+    empresa_contratista_id: uuid.UUID = Field(..., description="ID de la empresa contratista propietaria")
     marca: str = Field(..., description="Marca del vehículo")
     modelo: str = Field(..., description="Modelo del vehículo")
     año: int = Field(..., ge=1990, le=2030, description="Año de fabricación")
@@ -120,24 +105,38 @@ class InspeccionCreate(BaseModel):
     mantenimiento_recomendado: Optional[str] = None
     observaciones: Optional[str] = None
 
-    # Firmas (Técnico logueado + hasta 2 adicionales — RN-10)
+    # Campos de subregistro
+    inspeccion_primaria_id: Optional[uuid.UUID] = Field(None, description="ID de la inspección primaria")
+    motivo_actualizacion: Optional[str] = Field(None, description="Motivo de actualización")
+    fecha_actualizacion: Optional[datetime] = Field(None, description="Fecha/hora Colombia de actualización")
+
+    # Firmas
     firma_url: str = Field(..., description="Firma digital del técnico inspector logueado")
     nombres_tecnicos_adicionales: List[str] = Field(default=[], max_items=2, description="Nombres de hasta 2 técnicos adicionales")
 
     # Evaluaciones
     checklist_items: List[ChecklistItemCreate] = Field(..., min_items=1, description="Lista de evaluaciones por ítem")
-    evidencias: List[EvidenciaFotograficaCreate] = Field(default=[], description="Evidencias fotográficas")
+
+    @field_validator('placa')
+    @classmethod
+    def validar_placa_colombia(cls, v: str) -> str:
+        v_clean = v.strip().upper()
+        if not re.match(r'^[A-Z]{3} \d{3}$', v_clean):
+            raise ValueError('La placa debe tener el formato colombiano ABC 123 (3 letras mayúsculas, espacio, 3 dígitos)')
+        return v_clean
+
 
 class InspeccionUpdate(BaseModel):
     kilometraje: Optional[int] = Field(None, ge=0)
     mantenimiento_recomendado: Optional[str] = None
     observaciones: Optional[str] = None
     checklist_items: Optional[List[ChecklistItemCreate]] = None
-    evidencias: Optional[List[EvidenciaFotograficaCreate]] = None
+    motivo_actualizacion: Optional[str] = None
+    fecha_actualizacion: Optional[datetime] = None
 
 
 class InspeccionAprobarRequest(BaseModel):
-    firma_url: str = Field(..., description="Firma digital del Jefe de Inspección al aprobar")
+    firma_url: str = Field(..., description="Firma digital del Ingeniero al aprobar")
 
 class SegundaRevisionRequest(BaseModel):
     observaciones: Optional[str] = Field(None, description="Observaciones o justificativo para la segunda revisión")
@@ -147,6 +146,11 @@ class InspeccionResponse(BaseModel):
     numero_inspeccion: int
     numero_revision: int
     inspeccion_previa_id: Optional[uuid.UUID] = None
+    inspeccion_primaria_id: Optional[uuid.UUID] = None
+    motivo_actualizacion: Optional[str] = None
+    fecha_actualizacion: Optional[datetime] = None
+    es_subregistro: bool = False
+
     vehiculo_id: uuid.UUID
     vehiculo_patente: Optional[str] = None
     vehiculo_modelo: Optional[str] = None
@@ -179,14 +183,24 @@ class InspeccionResponse(BaseModel):
     checklist_items: List[ChecklistItemResponse] = []
     hallazgos: List[HallazgoResponse] = []
     firmas_tecnicos: List[FirmaTecnicoResponse] = []
-    evidencias: List[EvidenciaFotograficaResponse] = []
 
     class Config:
         from_attributes = True
 
-class PresignedUrlRequest(BaseModel):
-    filename: str = Field(..., description="Nombre del archivo original")
 
-class PresignedUrlResponse(BaseModel):
-    upload_url: str
-    file_url: str
+class CheckPlacaResponse(BaseModel):
+    tiene_registro_primario: bool
+    registro_primario: Optional[InspeccionResponse] = None
+
+
+class VehiculoInspeccionadoResponse(BaseModel):
+    placa: str
+    marca: str
+    modelo: str
+    año: int
+    kilometraje: int
+    total_inspecciones: int
+    ultima_fecha: datetime
+    nombre_tecnico_ultimo: Optional[str] = None
+    equipo_auxiliar: Optional[str] = None
+    numero_interno: Optional[str] = None

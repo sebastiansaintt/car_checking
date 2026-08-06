@@ -3,7 +3,6 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func, case, desc
 
 from app.models.inspeccion import Inspeccion, ChecklistItem, CatalogoChecklist
-from app.models.mantenimiento import Mantenimiento
 from app.models.vehiculo import Vehiculo
 
 class EstadisticasRepository:
@@ -13,15 +12,9 @@ class EstadisticasRepository:
         total_inspecciones = db.query(Inspeccion).filter(Inspeccion.deleted_at == None).count()
         
         inspecciones_apto = db.query(Inspeccion)\
-            .filter(Inspeccion.deleted_at == None, Inspeccion.resultado_general == "apto").count()
+            .filter(Inspeccion.deleted_at == None, Inspeccion.resultado_general.in_(["aprobado", "apto"])).count()
         
         tasa_aptitud = round((inspecciones_apto / total_inspecciones * 100), 1) if total_inspecciones > 0 else 0.0
-
-        mantenimientos_pendientes = db.query(Mantenimiento)\
-            .filter(Mantenimiento.estado.in_(["pendiente", "en_progreso"])).count()
-            
-        mantenimientos_vencidos = db.query(Mantenimiento)\
-            .filter(Mantenimiento.estado == "vencido").count()
 
         return {
             "total_vehiculos": total_vehiculos,
@@ -29,8 +22,8 @@ class EstadisticasRepository:
             "inspecciones_apto": inspecciones_apto,
             "inspecciones_no_apto": total_inspecciones - inspecciones_apto,
             "tasa_aptitud": tasa_aptitud,
-            "mantenimientos_pendientes": mantenimientos_pendientes,
-            "mantenimientos_vencidos": mantenimientos_vencidos
+            "mantenimientos_pendientes": 0,
+            "mantenimientos_vencidos": 0
         }
 
     @staticmethod
@@ -41,8 +34,8 @@ class EstadisticasRepository:
         results = db.query(
             func.to_char(Inspeccion.fecha, 'YYYY-MM').label("mes"),
             func.count(Inspeccion.id).label("total"),
-            func.count(case((Inspeccion.resultado_general == 'apto', 1))).label("aptos"),
-            func.count(case((Inspeccion.resultado_general == 'no_apto', 1))).label("no_aptos")
+            func.count(case((Inspeccion.resultado_general.in_(['aprobado', 'apto']), 1))).label("aptos"),
+            func.count(case((Inspeccion.resultado_general.in_(['con_hallazgos', 'no_apto']), 1))).label("no_aptos")
         ).filter(
             Inspeccion.deleted_at == None,
             Inspeccion.fecha >= hace_6_meses
@@ -55,8 +48,8 @@ class EstadisticasRepository:
 
     @staticmethod
     def get_distribucion_resultados(db: Session) -> dict:
-        aptos = db.query(Inspeccion).filter(Inspeccion.deleted_at == None, Inspeccion.resultado_general == "apto").count()
-        no_aptos = db.query(Inspeccion).filter(Inspeccion.deleted_at == None, Inspeccion.resultado_general == "no_apto").count()
+        aptos = db.query(Inspeccion).filter(Inspeccion.deleted_at == None, Inspeccion.resultado_general.in_(["aprobado", "apto"])).count()
+        no_aptos = db.query(Inspeccion).filter(Inspeccion.deleted_at == None, Inspeccion.resultado_general.in_(["con_hallazgos", "no_apto"])).count()
         return {"aptos": aptos, "no_aptos": no_aptos}
 
     @staticmethod
@@ -86,7 +79,7 @@ class EstadisticasRepository:
             CatalogoChecklist.nombre,
             func.count(ChecklistItem.id).label("fallas")
         ).join(ChecklistItem, CatalogoChecklist.id == ChecklistItem.catalogo_id)\
-         .filter(ChecklistItem.valor.in_(["malo", "regular"]))\
+         .filter(ChecklistItem.valor.in_(["subestandar", "malo", "regular", "s"]))\
          .group_by(CatalogoChecklist.id, CatalogoChecklist.nombre)\
          .order_by(desc("fallas"))\
          .limit(limit).all()
@@ -98,9 +91,4 @@ class EstadisticasRepository:
 
     @staticmethod
     def get_mantenimientos_por_estado(db: Session) -> list[dict]:
-        results = db.query(
-            Mantenimiento.estado,
-            func.count(Mantenimiento.id).label("total")
-        ).group_by(Mantenimiento.estado).all()
-
-        return [{"estado": r.estado, "total": r.total} for r in results]
+        return []
