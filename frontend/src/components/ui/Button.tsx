@@ -16,7 +16,7 @@ export const Button: React.FC<ButtonProps> = ({
   ...props
 }) => {
   const base =
-    'inline-flex items-center justify-center gap-1.5 font-medium rounded-button select-none ' +
+    'inline-flex items-center justify-center gap-1 font-small rounded-button select-none ' +
     'transition-colors duration-150 ease-out-soft ' +
     'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 ' +
     'disabled:opacity-40 disabled:cursor-not-allowed';
@@ -37,9 +37,9 @@ export const Button: React.FC<ButtonProps> = ({
   };
 
   const sizes: Record<string, string> = {
-    sm: 'text-xs px-2.5 py-1.5 h-7',
-    md: 'text-sm px-3 py-2 h-8',
-    lg: 'text-sm px-4 py-2.5 h-9',
+    sm: 'text-xs px-2.5 py-1.5 min-h-[1.75rem] h-auto leading-tight',
+    md: 'text-sm px-3 py-2 min-h-[2.25rem] h-auto leading-normal',
+    lg: 'text-sm px-4 py-2.5 min-h-[2.5rem] h-auto leading-normal',
   };
 
   return (

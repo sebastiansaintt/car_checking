@@ -184,20 +184,23 @@ export const TecnicoInspectorDashboard: React.FC = () => {
               </p>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 w-full sm:w-auto">
               <Button
                 variant="primary"
                 size="md"
+                className="w-full sm:w-auto justify-center text-center py-2.5 px-4 text-sm font-medium whitespace-normal min-h-[2.5rem] h-auto"
                 onClick={() => { setInspeccionToEdit(null); setActiveTab('nueva'); }}
               >
-                <PlusCircle className="w-4 h-4" /> Nueva Inspección
+                <PlusCircle className="w-4 h-4 shrink-0" />
+                <span>{inspeccionToEdit ? 'Re-inspección' : 'Nueva Inspección'}</span>
               </Button>
               <Button
                 variant="secondary"
                 size="md"
+                className="w-full sm:w-auto justify-center text-center py-2.5 px-4 text-sm font-medium whitespace-normal min-h-[2.5rem] h-auto"
                 onClick={() => setActiveTab('historial')}
               >
-                Ver historial completo
+                <span>Ver historial completo</span>
               </Button>
             </div>
 
