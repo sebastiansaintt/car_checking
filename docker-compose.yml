@@ -11,6 +11,12 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-car_checking}"]
+      interval: 3s
+      timeout: 3s
+      retries: 5
+      start_period: 3s
 
   redis:
     image: redis:7-alpine
@@ -21,6 +27,12 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-changeme}", "ping"]
+      interval: 3s
+      timeout: 3s
+      retries: 5
+      start_period: 2s
 
   backend:
     build:
@@ -33,15 +45,20 @@ services:
     volumes:
       - ./backend:/workspace
     env_file:
-      - ./backend/.env
+      - .env
     environment:
-      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:?err}@db:5432/${POSTGRES_DB:-car_checking}
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-car_checking}
       - REDIS_URL=redis://default:${REDIS_PASSWORD:-changeme}@redis:6379/0
-    # Solo migra en startup. Ejecutar seed manualmente: docker exec car_checking_backend python -m app.db.seed
-    command: sh -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+      - UPSTASH_REDIS_REST_URL=
+      - UPSTASH_REDIS_REST_TOKEN=
+      - ENVIRONMENT=development
+    # Ejecuta migraciones, siembra usuarios/catálogos si está vacía, e inicia uvicorn con hot-reload
+    command: sh -c "alembic upgrade head && python -m app.db.seed && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
 
   frontend:
     build:

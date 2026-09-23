@@ -38,13 +38,22 @@ export const ChecklistForm: React.FC<ChecklistFormProps> = ({
   const [empresaId, setEmpresaId] = useState<string>(initialInspeccionToEdit?.empresa_contratista_id || '');
   const [marca, setMarca] = useState<string>(initialInspeccionToEdit?.vehiculo?.marca || '');
   const [modelo, setModelo] = useState<string>(initialInspeccionToEdit?.vehiculo?.modelo || '');
-  const [año, setAño] = useState<number>(initialInspeccionToEdit?.vehiculo?.año || new Date().getFullYear());
+  const currentYear = new Date().getFullYear();
+  const [año, setAño] = useState<number>(initialInspeccionToEdit?.vehiculo?.año || currentYear);
   const [tipoVehiculo, setTipoVehiculo] = useState<string>('Camioneta');
   const [numeroInterno, setNumeroInterno] = useState<string>('');
   const [color, setColor] = useState<string>('');
   const [equipoAuxiliar, setEquipoAuxiliar] = useState<string>(initialInspeccionToEdit?.equipo_auxiliar || '');
   const [areaTransitar, setAreaTransitar] = useState<string>(initialInspeccionToEdit?.area_transitar || '');
-  const [kilometraje, setKilometraje] = useState<number>(initialInspeccionToEdit?.kilometraje || 0);
+  const [kilometraje, setKilometraje] = useState<string | number>(
+    initialInspeccionToEdit?.kilometraje !== undefined ? initialInspeccionToEdit.kilometraje : ''
+  );
+
+  // Lista de años disponibles: desde 1999 hasta 2027 (orden descendente para conveniencia)
+  const opcionesAños = Array.from({ length: 2027 - 1999 + 1 }, (_, i) => 2027 - i).map(year => ({
+    value: year.toString(),
+    label: year.toString(),
+  }));
   const [horaInspeccion, setHoraInspeccion] = useState<string>(
     initialInspeccionToEdit?.hora_inspeccion || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   );
@@ -197,6 +206,11 @@ export const ChecklistForm: React.FC<ChecklistFormProps> = ({
 
     if (!empresaId) {
       setErrorMsg('Debe seleccionar una empresa contratista.');
+      return;
+    }
+
+    if (kilometraje === '' || Number(kilometraje) < 0 || isNaN(Number(kilometraje))) {
+      setErrorMsg('Debe ingresar un kilometraje válido.');
       return;
     }
 
@@ -389,7 +403,13 @@ export const ChecklistForm: React.FC<ChecklistFormProps> = ({
             </div>
 
             <div>
-              <Input label="Año" type="number" value={año} onChange={e => setAño(Number(e.target.value))} required />
+              <Select
+                label="Año *"
+                value={año.toString()}
+                onChange={e => setAño(Number(e.target.value))}
+                options={opcionesAños}
+                required
+              />
             </div>
 
             <div>
@@ -397,7 +417,11 @@ export const ChecklistForm: React.FC<ChecklistFormProps> = ({
                 label="Kilometraje Actual (km) *"
                 type="number"
                 value={kilometraje}
-                onChange={e => setKilometraje(Number(e.target.value))}
+                onChange={e => {
+                  const val = e.target.value;
+                  setKilometraje(val === '' ? '' : Number(val));
+                }}
+                placeholder="Ej. 45000"
                 required
               />
             </div>
