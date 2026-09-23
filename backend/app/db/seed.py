@@ -14,6 +14,11 @@ from app.core.security import hash_password
 def seed_database():
     db = SessionLocal()
     try:
+        force_seed = os.getenv("FORCE_SEED", "false").lower() in ("true", "1")
+        if not force_seed and db.query(Usuario).first() is not None:
+            print("Base de datos ya inicializada con usuarios. Omitiendo sembrado (use FORCE_SEED=true para forzar reinicio).")
+            return
+
         print("Iniciando depuración completa y sembrado con credenciales oficiales...")
 
         # 0. Eliminar todas las filas de todas las tablas en orden de dependencias FK
@@ -31,37 +36,44 @@ def seed_database():
             emp_obj = EmpresaContratista(nombre=emp["nombre"], rut=emp["rut"], contacto=emp["contacto"], activo=True)
             db.add(emp_obj)
 
-        # 2. Sembrado de Usuarios (4 Credenciales Oficiales Únicas)
+        # 2. Sembrado de Usuarios (credenciales desde variables de entorno)
         usuarios = [
             {
                 "nombre": "Técnico Inspector",
                 "email": "inspector@carchecking.com",
-                "password": "QrmKv3KPffN6",
+                "password": os.environ.get("SEED_INSPECTOR_PW", ""),
                 "rol": "tecnico_inspector",
                 "cargo": "Técnico Inspector de Campo"
             },
             {
                 "nombre": "Ingeniero",
                 "email": "ingeniero@carchecking.com",
-                "password": "Js08$LhIDGfq",
+                "password": os.environ.get("SEED_INGENIERO_PW", ""),
                 "rol": "ingeniero",
                 "cargo": "Ingeniero de Calidad e Inspección"
             },
             {
                 "nombre": "Programador",
                 "email": "programador@carchecking.com",
-                "password": "mtVI7@JT#LuE",
+                "password": os.environ.get("SEED_PROGRAMADOR_PW", ""),
                 "rol": "programador",
                 "cargo": "Programador de Operaciones"
             },
             {
                 "nombre": "Administrador Sointer",
                 "email": "admin@carchecking.com",
-                "password": "yhFS8RjHvruP",
+                "password": os.environ.get("SEED_ADMIN_PW", ""),
                 "rol": "administrador",
                 "cargo": "Administrador del Sistema"
             }
         ]
+
+        # Validar que todas las contraseñas están configuradas
+        missing = [u["email"] for u in usuarios if not u["password"]]
+        if missing:
+            print(f"ERROR: Faltan contraseñas en variables de entorno para: {', '.join(missing)}")
+            print("Configure: SEED_INSPECTOR_PW, SEED_INGENIERO_PW, SEED_PROGRAMADOR_PW, SEED_ADMIN_PW")
+            return
 
         for u in usuarios:
             usuario = Usuario(

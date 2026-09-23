@@ -4,7 +4,6 @@ from pydantic import Field
 
 class Settings(BaseSettings):
     DATABASE_URL: str = Field(
-        default="postgresql://postgres:securepassword123@db:5432/car_checking",
         validation_alias="DATABASE_URL"
     )
     REDIS_URL: str = Field(
@@ -24,7 +23,6 @@ class Settings(BaseSettings):
         validation_alias="ENVIRONMENT"
     )
     SECRET_KEY: str = Field(
-        default="super-secret-key-change-in-production-1234567890",
         validation_alias="SECRET_KEY"
     )
     JWT_ALGORITHM: str = "HS256"

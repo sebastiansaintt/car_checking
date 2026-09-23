@@ -6,8 +6,16 @@ __pycache__/
 venv/
 ENV/
 env/
+
+# Environment files (all locations)
 .env
+*.env
+backend/.env
+frontend/.env
+
+# Secrets
 secret.py
+passwords.py
 
 # Node
 node_modules/
@@ -38,4 +46,3 @@ folder/
 design/
 docs/planilla/
 implementation.md
-
