@@ -28,15 +28,26 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
     SESSION_INACTIVITY_TIMEOUT_SECONDS: int = 1800 # 30 minutos
+    GEMINI_API_KEY: str = Field(
+        default="",
+        validation_alias="GEMINI_API_KEY"
+    )
+    GEMINI_MODEL: str = Field(
+        default="gemini-3.8-flash-lite",
+        validation_alias="GEMINI_MODEL"
+    )
 
     @property
     def effective_database_url(self) -> str:
         """
-        Corrige esquemas de conexión 'postgres://' a 'postgresql://' requeridos por SQLAlchemy 2.0.
+        Garantiza el dialecto 'postgresql+psycopg2://' requerido por SQLAlchemy con psycopg2-binary.
         """
         url = self.DATABASE_URL
-        if url and url.startswith("postgres://"):
-            url = url.replace("postgres://", "postgresql://", 1)
+        if url:
+            if url.startswith("postgres://"):
+                url = url.replace("postgres://", "postgresql+psycopg2://", 1)
+            elif url.startswith("postgresql://"):
+                url = url.replace("postgresql://", "postgresql+psycopg2://", 1)
         return url
 
     @property

@@ -4,7 +4,7 @@ import json
 import logging
 from typing import Optional, List
 from datetime import datetime
-from fastapi import APIRouter, Depends, Header, HTTPException, status, Request
+from fastapi import APIRouter, Depends, Header, HTTPException, status, Request, UploadFile, File
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func
 import redis
@@ -28,9 +28,11 @@ from app.schemas.inspeccion import (
     HallazgoResponse,
     HallazgoUpdate,
     CheckPlacaResponse,
-    VehiculoInspeccionadoResponse
+    VehiculoInspeccionadoResponse,
+    DictadoInspeccionResponse
 )
 from app.services.inspeccion import InspeccionService
+from app.services.gemini_service import GeminiInspectionService
 from app.repositories.inspeccion import InspeccionRepository
 
 router = APIRouter(prefix="/inspecciones", tags=["Inspecciones"])
@@ -52,6 +54,39 @@ def get_checklist_catalog(
 ):
     """Retorna los ítems maestros del checklist."""
     return InspeccionRepository.get_checklist_catalog(db)
+
+
+@router.post("/ai-dictado", response_model=DictadoInspeccionResponse)
+async def procesar_ai_dictado(
+    audio: UploadFile = File(..., description="Archivo de audio grabado por el inspector"),
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user)
+):
+    """
+    Procesa un archivo de audio con dictado de inspección técnica usando Google Gemini
+    y extrae datos estructurados (placa, km, fallas de checklist y notas).
+    """
+    audio_bytes = await audio.read()
+    if not audio_bytes or len(audio_bytes) < 100:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="El archivo de audio está vacío o no contiene datos válidos."
+        )
+
+    if len(audio_bytes) > 25 * 1024 * 1024:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="El archivo de audio supera el límite máximo permitido de 25 MB."
+        )
+
+    # Catálogo de checklist activo para contexto de Gemini
+    catalog_items = InspeccionRepository.get_checklist_catalog(db)
+
+    return GeminiInspectionService.procesar_audio_dictado(
+        audio_bytes=audio_bytes,
+        mime_type=audio.content_type or "audio/webm",
+        catalog_items=catalog_items
+    )
 
 
 @router.get("/check-placa/{placa}", response_model=CheckPlacaResponse)

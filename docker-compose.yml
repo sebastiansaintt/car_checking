@@ -52,6 +52,8 @@ services:
       - UPSTASH_REDIS_REST_URL=
       - UPSTASH_REDIS_REST_TOKEN=
       - ENVIRONMENT=development
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - GEMINI_MODEL=${GEMINI_MODEL:-gemini-3.8-flash-lite}
     # Ejecuta migraciones, siembra usuarios/catálogos si está vacía, e inicia uvicorn con hot-reload
     command: sh -c "alembic upgrade head && python -m app.db.seed && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
     depends_on:

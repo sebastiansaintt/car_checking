@@ -7,9 +7,12 @@ import { Badge } from '../ui/Badge';
 import { DigitalSignature } from '../ui/DigitalSignature';
 import { SistemaChecklist } from './SistemaChecklist';
 import { SubregistroModal } from './SubregistroModal';
+import { VoiceInspectionButton } from './VoiceInspectionButton';
+import { VoiceConfirmationModal } from './VoiceConfirmationModal';
 import { apiFetch } from '../../lib/api';
 import { generateUUID } from '../../lib/offlineQueue';
 import { ArrowLeft, Plus, Trash2 } from 'lucide-react';
+import { DictadoInspeccionResponse } from '../../types';
 
 interface ChecklistFormProps {
   sistemas: CatalogoSistema[];
@@ -64,6 +67,10 @@ export const ChecklistForm: React.FC<ChecklistFormProps> = ({
   const [motivoActualizacion, setMotivoActualizacion] = useState<string>(initialInspeccionToEdit?.motivo_actualizacion || '');
   const [fechaActualizacion, setFechaActualizacion] = useState<string>(initialInspeccionToEdit?.fecha_actualizacion || '');
   const [showSubregistroModal, setShowSubregistroModal] = useState<boolean>(false);
+
+  // Estados para Dictado IA con Gemini
+  const [voiceResult, setVoiceResult] = useState<DictadoInspeccionResponse | null>(null);
+  const [showVoiceModal, setShowVoiceModal] = useState<boolean>(false);
 
   // Formateador y validador de Placa en tiempo real
   const handlePlacaChange = (val: string) => {
@@ -195,6 +202,89 @@ export const ChecklistForm: React.FC<ChecklistFormProps> = ({
     setShowSubregistroModal(false);
   };
 
+  const handleVoiceDataExtracted = (data: DictadoInspeccionResponse) => {
+    // 1. Placa: asignar y formatear
+    if (data.placa) {
+      handlePlacaChange(data.placa);
+    }
+
+    // 2. Datos del Vehículo
+    if (data.marca) {
+      setMarca(data.marca);
+    }
+    if (data.modelo) {
+      setModelo(data.modelo);
+    }
+    if (data.año !== undefined && data.año !== null) {
+      setAño(Number(data.año));
+    }
+    if (data.tipo_vehiculo) {
+      setTipoVehiculo(data.tipo_vehiculo);
+    }
+    if (data.color) {
+      setColor(data.color);
+    }
+
+    // 3. Kilometraje
+    if (data.kilometraje !== undefined && data.kilometraje !== null) {
+      setKilometraje(data.kilometraje);
+    }
+
+    // 4. Área a transitar
+    if (data.area_transitar) {
+      setAreaTransitar(data.area_transitar);
+    }
+
+    // 4. Observaciones dictadas
+    if (data.observaciones) {
+      setObservaciones(prev => (prev ? `${prev}\n${data.observaciones}` : data.observaciones!));
+    }
+
+    // 5. Mapear componentes subestándar (fallas detectadas)
+    if (data.items_subestandar && data.items_subestandar.length > 0) {
+      setItemsEvaluation(prev => {
+        const next = { ...prev };
+
+        data.items_subestandar.forEach(falla => {
+          let targetItemId: string | undefined;
+
+          // A. Coincidencia directa por catalogo_id
+          if (falla.catalogo_id && catalogo.some(c => c.id === falla.catalogo_id)) {
+            targetItemId = falla.catalogo_id;
+          }
+          // B. Coincidencia por código de ítem (ej. CH-01)
+          else if (falla.codigo_item) {
+            const match = catalogo.find(
+              c => c.codigo_item?.trim().toUpperCase() === falla.codigo_item?.trim().toUpperCase()
+            );
+            if (match) targetItemId = match.id;
+          }
+          // C. Coincidencia por aproximación de nombre
+          else if (falla.nombre_item) {
+            const search = falla.nombre_item.toLowerCase().trim();
+            const match = catalogo.find(
+              c => c.nombre.toLowerCase().includes(search) || search.includes(c.nombre.toLowerCase())
+            );
+            if (match) targetItemId = match.id;
+          }
+
+          if (targetItemId) {
+            next[targetItemId] = {
+              valor: 'subestandar',
+              comentario: falla.comentario_falla || next[targetItemId]?.comentario || '',
+            };
+          }
+        });
+
+        return next;
+      });
+    }
+
+    // Guardar para modal informativo y desplegarlo
+    setVoiceResult(data);
+    setShowVoiceModal(true);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
@@ -320,6 +410,12 @@ export const ChecklistForm: React.FC<ChecklistFormProps> = ({
         onCancel={handleCancelSubregistroModal}
       />
 
+      <VoiceConfirmationModal
+        isOpen={showVoiceModal}
+        onClose={() => setShowVoiceModal(false)}
+        data={voiceResult}
+      />
+
       {onCancel && (
         <button
           type="button"
@@ -332,7 +428,7 @@ export const ChecklistForm: React.FC<ChecklistFormProps> = ({
       )}
 
       {/* Header editorial */}
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
         <div>
           <p className="text-xs text-[#9CA3AF] font-medium mb-1">
             {isEditingMode
@@ -349,9 +445,14 @@ export const ChecklistForm: React.FC<ChecklistFormProps> = ({
           </p>
         </div>
 
-        <Badge variant={tieneCualquierSubestandar ? 'no_apto' : 'apto'}>
-          {tieneCualquierSubestandar ? 'Con hallazgos' : 'Aprobado'}
-        </Badge>
+        <div className="flex items-center gap-3">
+          {!isEditingMode && (
+            <VoiceInspectionButton onDataExtracted={handleVoiceDataExtracted} />
+          )}
+          <Badge variant={tieneCualquierSubestandar ? 'no_apto' : 'apto'}>
+            {tieneCualquierSubestandar ? 'Con hallazgos' : 'Aprobado'}
+          </Badge>
+        </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">

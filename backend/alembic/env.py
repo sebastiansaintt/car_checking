@@ -41,7 +41,7 @@ def run_migrations_online() -> None:
     # Creamos el engine directamente usando settings.DATABASE_URL para evitar
     # hardcodear credenciales en alembic.ini
     connectable = create_engine(
-        settings.DATABASE_URL,
+        settings.effective_database_url,
         poolclass=pool.NullPool,
     )
 

@@ -204,3 +204,25 @@ class VehiculoInspeccionadoResponse(BaseModel):
     nombre_tecnico_ultimo: Optional[str] = None
     equipo_auxiliar: Optional[str] = None
     numero_interno: Optional[str] = None
+
+
+# --- AI Dictation Schemas ---
+class ItemSubestandarDetectado(BaseModel):
+    catalogo_id: Optional[str] = Field(None, description="UUID del ítem del catálogo si fue identificado con certeza")
+    codigo_item: Optional[str] = Field(None, description="Código del ítem (ej. CH-01, DIR-02)")
+    nombre_item: Optional[str] = Field(None, description="Nombre aproximado del componente con falla")
+    comentario_falla: str = Field(..., description="Descripción detallada de la falla o condición subestándar detectada")
+
+
+class DictadoInspeccionResponse(BaseModel):
+    placa: Optional[str] = Field(None, description="Placa del vehículo detectada (ej. ABC 123)")
+    marca: Optional[str] = Field(None, description="Marca del vehículo si fue mencionada (ej. Toyota, Nissan)")
+    modelo: Optional[str] = Field(None, description="Modelo del vehículo si fue mencionado (ej. Hilux, Amarok)")
+    año: Optional[int] = Field(None, description="Año de fabricación del vehículo si fue mencionado (ej. 2024)")
+    tipo_vehiculo: Optional[str] = Field(None, description="Tipo de vehículo (ej. Camioneta, Furgón, Camión)")
+    color: Optional[str] = Field(None, description="Color del vehículo si fue mencionado")
+    kilometraje: Optional[int] = Field(None, description="Kilometraje actual del vehículo si fue mencionado")
+    area_transitar: Optional[str] = Field(None, description="Área a transitar si fue mencionada (ej. Industrial, Mina)")
+    observaciones: Optional[str] = Field(None, description="Observaciones generales o recomendaciones")
+    items_subestandar: List[ItemSubestandarDetectado] = Field(default_factory=list, description="Lista de componentes con fallas o condiciones subestándar")
+    texto_transcrito: Optional[str] = Field(None, description="Resumen o transcripción del audio dictado")

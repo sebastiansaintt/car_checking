@@ -185,3 +185,24 @@ export interface KpiResumen {
   mantenimientos_pendientes: number;
   mantenimientos_vencidos: number;
 }
+
+export interface ItemSubestandarDetectado {
+  catalogo_id?: string;
+  codigo_item?: string;
+  nombre_item?: string;
+  comentario_falla: string;
+}
+
+export interface DictadoInspeccionResponse {
+  placa?: string;
+  marca?: string;
+  modelo?: string;
+  año?: number;
+  tipo_vehiculo?: string;
+  color?: string;
+  kilometraje?: number;
+  area_transitar?: string;
+  observaciones?: string;
+  items_subestandar: ItemSubestandarDetectado[];
+  texto_transcrito?: string;
+}
