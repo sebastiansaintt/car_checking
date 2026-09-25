@@ -23,8 +23,8 @@ def db_session():
     Session = sessionmaker(bind=engine)
     session = Session()
 
-    tecnico = Usuario(nombre="Eduardo Técnico", email="tecnico@sointer.com", password_hash="hash", rol="tecnico_inspector")
-    jefe = Usuario(nombre="Jhon Jefe", email="jefe@sointer.com", password_hash="hash", rol="jefe_inspeccion")
+    tecnico = Usuario(nombre="Eduardo Técnico", email="tecnico@veyra.com", password_hash="hash", rol="tecnico_inspector")
+    jefe = Usuario(nombre="Jhon Jefe", email="jefe@veyra.com", password_hash="hash", rol="jefe_inspeccion")
     sys1 = CatalogoSistema(codigo="1", nombre="SISTEMA DE DIRECCIÓN", orden=1)
     session.add_all([tecnico, jefe, sys1])
     session.flush()
@@ -78,7 +78,7 @@ def test_crear_inspeccion_sin_hallazgos_y_aprobar(db_session):
 
     assert aprobada.estado == EstadoInspeccion.APROBADO.value
     assert aprobada.sello_url is not None
-    assert "Sointer Ltda." in aprobada.sello_url
+    assert "Empresa Interventora S.A.S." in aprobada.sello_url
     assert aprobada.fecha_proxima_revision is not None
 
 def test_corregir_inspeccion_misma_planilla_y_auditar(db_session):
@@ -144,4 +144,4 @@ def test_corregir_inspeccion_misma_planilla_y_auditar(db_session):
     aprobada = InspeccionService.aprobar_inspeccion(db, jefe, ins_id, aprob_req)
 
     assert aprobada.estado == EstadoInspeccion.APROBADO.value
-    assert "Sointer Ltda." in aprobada.sello_url
+    assert "Empresa Interventora S.A.S." in aprobada.sello_url

@@ -191,7 +191,7 @@ export const InspeccionDetailModal: React.FC<InspeccionDetailModalProps> = ({
           <div>
             <strong className="text-[#6B7280] block mb-1 uppercase tracking-wide">Firma Digital Inspector:</strong>
             <span className="font-semibold text-[#111827]">{inspeccion.creado_por_nombre || 'Técnico Inspector'}</span>
-            <span className="text-[10px] text-[#6B7280] block">Técnico Inspector Sointer</span>
+            <span className="text-[10px] text-[#6B7280] block">Técnico Inspector</span>
           </div>
           {(inspeccion.firma_url || (inspeccion.firmas_tecnicos && inspeccion.firmas_tecnicos[0]?.firma_url)) ? (
             <div className="bg-white p-1.5 border border-[#E5E7EB] rounded shadow-sm">

@@ -83,8 +83,8 @@ export const AppShell: React.FC<AppShellProps> = ({
               </svg>
             </div>
             <div className="min-w-0">
-              <span className="text-sm font-semibold text-[#111827] tracking-tight block">CarCheck</span>
-              <span className="text-[11px] text-[#9CA3AF] block leading-tight">Sointer Ltda.</span>
+              <span className="text-sm font-semibold text-[#111827] tracking-tight block">VEYRA</span>
+              <span className="text-[11px] text-[#9CA3AF] block leading-tight">Reporte de Estado Vehicular</span>
             </div>
           </div>
         </div>
@@ -140,7 +140,7 @@ export const AppShell: React.FC<AppShellProps> = ({
           >
             <Menu className="w-5 h-5" />
           </button>
-          <span className="text-sm font-semibold text-[#111827] tracking-tight">CarCheck</span>
+          <span className="text-sm font-semibold text-[#111827] tracking-tight">VEYRA</span>
           <div className="ml-auto flex items-center gap-2">
             {headerRight}
           </div>

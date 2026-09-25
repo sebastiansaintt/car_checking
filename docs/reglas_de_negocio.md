@@ -1,11 +1,11 @@
-# Reglas de Negocio — Sistema de Inspección Sointer Ltda.
+# Reglas de Negocio — VEYRA (Reporte de Estado Vehicular para Interventoras)
 **Código:** RN · **Versión:** 2.0 · **Fecha:** 2026-07-31
 
 ---
 
 ## Contexto Operativo
 
-Sointer Ltda. es una empresa **interventora contratista**: no posee la flota vehicular inspeccionada. Recibe vehículos de empresas contratistas externas (p.ej. Epromecánica, proveedores de Cerrejón), los somete a revisión técnica estandarizada según formato **FO-M4-P13-96**, y emite un dictamen de aprobación o rechaza el equipo hasta que cumpla los estándares.
+La entidad interventora es una empresa de **supervisión e interventoría técnica**: no posee la flota vehicular inspeccionada. Recibe vehículos de empresas contratistas externas (proveedores y operadores de transporte/maquinaria), los somete a revisión técnica estandarizada según formato **FO-M4-P13-96**, y emite un dictamen de aprobación o rechaza el equipo hasta que cumpla los estándares.
 
 El sistema digitaliza este proceso garantizando **trazabilidad, seguimiento y aprobación real y verificable**.
 
@@ -125,7 +125,7 @@ El sistema digitaliza este proceso garantizando **trazabilidad, seguimiento y ap
 ### RN-12 · Sello de Aprobación (Estampado Digital)
 
 - Al ser aprobada una inspección, el sistema genera automáticamente un **sello digital** que incluye:
-  - Nombre de la empresa: **Sointer Ltda.**
+  - Nombre de la empresa interventora / entidad certificadora.
   - Fecha y hora de creación de la inspección.
   - Fecha y hora de aprobación.
   - Texto: **APROBADO**

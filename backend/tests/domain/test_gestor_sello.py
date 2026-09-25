@@ -13,7 +13,7 @@ def test_generar_sello_aprobacion():
         firma_jefe_url="/static/uploads/firma_jefe.png"
     )
 
-    assert sello.empresa_nombre == "Sointer Ltda."
+    assert sello.empresa_nombre == "Empresa Interventora S.A.S."
     assert sello.numero_inspeccion == 4792
     assert sello.leyenda == "APROBADO"
     assert sello.aprobado_por_nombre == "Eduardo García"

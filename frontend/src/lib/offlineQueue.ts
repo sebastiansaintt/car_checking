@@ -20,7 +20,7 @@ export function generateUUID(): string {
   });
 }
 
-const DB_NAME = 'CarCheckingDB';
+const DB_NAME = 'VeyraDB';
 const DB_VERSION = 1;
 const STORE_NAME = 'offline_inspecciones';
 

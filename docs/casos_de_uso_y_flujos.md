@@ -1,4 +1,4 @@
-# Casos de Uso, Secuencias y Flujos — Sistema de Inspección Sointer Ltda.
+# Casos de Uso, Secuencias y Flujos — VEYRA (Reporte de Estado Vehicular para Interventoras)
 **Versión:** 2.0 · **Fecha:** 2026-07-31
 
 ---
@@ -167,7 +167,7 @@ Jefe                     Frontend                   Backend               BD
   │                         │                           │   Verifica prec.  │
   │                         │                           │   Cambia estado──►│
   │                         │                           │── Genera sello────►│
-  │                         │                           │   (Sointer, fecha,│
+  │                         │                           │   (Sello, fecha,  │
   │                         │                           │   hora, APROBADO) │
   │                         │                           │── fecha_próxima   │
   │                         │                           │   (+ 6 meses) ───►│

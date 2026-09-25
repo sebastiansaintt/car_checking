@@ -17,13 +17,13 @@ def db_session():
     session.close()
 
 def test_crear_empresa_contratista(db_session):
-    data = EmpresaContratistaCreate(nombre="Epromecánica S.A.S.", rut="900123456-1", contacto="contacto@epromecanica.com")
+    data = EmpresaContratistaCreate(nombre="Transportes del Norte S.A.S.", rut="900123456-1", contacto="contacto@transportesnorte.com")
     empresa = EmpresaContratistaService.create_empresa(db_session, data)
     assert empresa.id is not None
-    assert empresa.nombre == "Epromecánica S.A.S."
+    assert empresa.nombre == "Transportes del Norte S.A.S."
 
 def test_error_empresa_duplicada(db_session):
-    data = EmpresaContratistaCreate(nombre="Epromecánica S.A.S.", rut="900123456-1")
+    data = EmpresaContratistaCreate(nombre="Transportes del Norte S.A.S.", rut="900123456-1")
     EmpresaContratistaService.create_empresa(db_session, data)
 
     with pytest.raises(HTTPException) as exc_info:

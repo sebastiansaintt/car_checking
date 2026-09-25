@@ -180,7 +180,7 @@ export const TecnicoInspectorDashboard: React.FC = () => {
               <p className="text-xs text-[#9CA3AF] font-medium mb-1">Técnico Inspector</p>
               <h1 className="text-base font-semibold text-[#111827]">Resumen Operativo</h1>
               <p className="text-sm text-[#6B7280] mt-1">
-                Panel de control de inspecciones técnicas de flota — Sointer Ltda.
+                Panel de control de inspecciones técnicas de flota vehicular.
               </p>
             </div>
 

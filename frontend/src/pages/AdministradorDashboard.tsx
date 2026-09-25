@@ -247,7 +247,7 @@ export const AdministradorDashboard: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <h1 className="text-base font-semibold text-[#111827]">Empresas Contratistas</h1>
-                      <p className="text-sm text-[#6B7280]">Empresas propietarias de vehículos inspeccionados por Sointer.</p>
+                      <p className="text-sm text-[#6B7280]">Empresas propietarias de vehículos inspeccionados por la entidad interventora.</p>
                     </div>
                     <div className="flex items-center gap-2">
                       <Button variant="ghost" size="sm" onClick={loadData}>
@@ -407,7 +407,7 @@ export const AdministradorDashboard: React.FC = () => {
         >
           <form id="user-form" onSubmit={handleSaveUser} className="flex flex-col gap-3">
             <Input label="Nombre completo" value={uNombre} onChange={(e) => setUNombre(e.target.value)} placeholder="Ej. Carlos Ruiz" required />
-            <Input label="Correo electrónico" type="email" value={uEmail} onChange={(e) => setUEmail(e.target.value)} placeholder="usuario@sointer.com" required />
+            <Input label="Correo electrónico" type="email" value={uEmail} onChange={(e) => setUEmail(e.target.value)} placeholder="usuario@interventora.com" required />
             <Input
               label={editingUser ? 'Nueva contraseña (dejar en blanco para mantener)' : 'Contraseña'}
               type="password" value={uPassword} onChange={(e) => setUPassword(e.target.value)}
@@ -446,7 +446,7 @@ export const AdministradorDashboard: React.FC = () => {
           }
         >
           <form id="empresa-form" onSubmit={handleSaveEmpresa} className="flex flex-col gap-3">
-            <Input label="Razón social" value={eNombre} onChange={(e) => setENombre(e.target.value)} placeholder="Ej. Epromecánica S.A.S." required />
+            <Input label="Razón social" value={eNombre} onChange={(e) => setENombre(e.target.value)} placeholder="Ej. Transportes Andinos S.A.S." required />
             <Input label="RUT / Identificación" value={eRut} onChange={(e) => setERut(e.target.value)} placeholder="Ej. 900.123.456-7" />
             <Input label="Contacto" value={eContacto} onChange={(e) => setEContacto(e.target.value)} placeholder="Ej. contacto@empresa.com" />
           </form>

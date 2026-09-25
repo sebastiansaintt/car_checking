@@ -122,7 +122,7 @@ export const AprobacionModal: React.FC<AprobacionModalProps> = ({
               <tbody>
                 <tr>
                   <td className="text-[#6B7280] font-medium w-40">Empresa Contratista</td>
-                  <td className="font-medium">{inspeccion.empresa_contratista?.nombre || inspeccion.empresa_contratista_nombre || 'Sointer'}</td>
+                  <td className="font-medium">{inspeccion.empresa_contratista?.nombre || inspeccion.empresa_contratista_nombre || 'Empresa Contratista'}</td>
                 </tr>
                 <tr>
                   <td className="text-[#6B7280] font-medium">Vehículo / Placa</td>

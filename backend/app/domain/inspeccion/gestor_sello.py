@@ -6,8 +6,8 @@ Enforces RN-12, ADJ-02.
 from dataclasses import dataclass
 from datetime import datetime
 
-EMPRESA_NOMBRE_DEFECTO = "Sointer Ltda."
-EMPRESA_NIT_DEFECTO = "900.467.017-4"
+EMPRESA_NOMBRE_DEFECTO = "Empresa Interventora S.A.S."
+EMPRESA_NIT_DEFECTO = "900.000.000-1"
 
 @dataclass(frozen=True)
 class SelloAprobacion:

@@ -21,7 +21,7 @@ def test_crud_usuario(db_session):
     # 1. Crear usuario
     u_create = UsuarioCreate(
         nombre="Inspector Carlos Ruiz",
-        email="carlos.ruiz@sointer.com",
+        email="carlos.ruiz@veyra.com",
         password="password123",
         rol="tecnico_inspector",
         cargo="Técnico de Terreno"
@@ -29,7 +29,7 @@ def test_crud_usuario(db_session):
     user = UsuarioService.create_usuario(db_session, u_create)
     assert user.id is not None
     assert user.nombre == "Inspector Carlos Ruiz"
-    assert user.email == "carlos.ruiz@sointer.com"
+    assert user.email == "carlos.ruiz@veyra.com"
     assert user.rol == "tecnico_inspector"
     assert user.activo is True
 
@@ -51,7 +51,7 @@ def test_crud_usuario(db_session):
 def test_crear_usuario_email_duplicado(db_session):
     u_create = UsuarioCreate(
         nombre="User One",
-        email="duplicado@sointer.com",
+        email="duplicado@veyra.com",
         password="password123",
         rol="tecnico_inspector"
     )

@@ -1,6 +1,6 @@
-# Car Checking App | Build for Spanish
+# VEYRA — Reporte de Estado Vehicular para Interventoras
 
-Car Checking App is a **Progressive Web App (PWA)** built to streamline vehicle inspection workflows for a private contractor. Since it's an internal tool, using a PWA makes deployment and installation frictionless while still delivering a near-native experience across devices.
+VEYRA es una **Progressive Web App (PWA)** diseñada para optimizar los flujos de trabajo de inspección técnica vehicular para interventoras y contratistas. Como herramienta especializada, su formato PWA facilita la instalación y uso sin fricciones, brindando una experiencia rápida y confiable tanto en dispositivos móviles en campo como en escritorio.
 
 The main goal is to replace paper-based inspection reports with a digital workflow, reducing the time spent filling out reports while providing full traceability across the entire vehicle lifecycle. This includes inspection history, maintenance records, and real-time fleet availability.
 

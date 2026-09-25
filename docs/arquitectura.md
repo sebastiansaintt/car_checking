@@ -1,4 +1,4 @@
-# Arquitectura del Sistema — Sointer Ltda. Sistema de Inspección
+# Arquitectura del Sistema — VEYRA (Reporte de Estado Vehicular para Interventoras)
 **Versión:** 2.0 · **Fecha:** 2026-07-31
 
 ---

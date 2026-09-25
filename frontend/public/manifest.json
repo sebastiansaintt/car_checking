@@ -1,7 +1,7 @@
 {
-  "short_name": "Car Check",
-  "name": "Car Check — Inspección y Control de Flota",
-  "description": "Sistema completo de inspección física de vehículos, mantenimientos preventivos y analíticas de flota.",
+  "short_name": "VEYRA",
+  "name": "VEYRA — Reporte de Estado Vehicular para Interventoras",
+  "description": "VEYRA — Reporte de estado vehicular para interventoras. Sistema integral de inspección técnica vehicular.",
   "icons": [
     {
       "src": "/vite.svg",

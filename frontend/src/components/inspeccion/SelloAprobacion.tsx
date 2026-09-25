@@ -41,8 +41,8 @@ export const SelloAprobacion: React.FC<SelloAprobacionProps> = ({
     }
   }
 
-  const empresa = parsed?.empresa_nombre || 'SOINTER LTDA.';
-  const nit = parsed?.empresa_nit || 'NIT 900.467.017-4';
+  const empresa = parsed?.empresa_nombre || 'INTERVENTORÍA TÉCNICA VEHICULAR';
+  const nit = parsed?.empresa_nit || 'NIT 900.000.000-1';
   const numIns = parsed?.numero_inspeccion || numeroInspeccion || 0;
   const fecCrea = parsed?.fecha_creacion || fechaCreacion || 'N/A';
   const fecAprob = parsed?.fecha_aprobacion || fechaAprobacion || 'N/A';

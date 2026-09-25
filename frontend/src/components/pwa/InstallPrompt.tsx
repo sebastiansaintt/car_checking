@@ -33,7 +33,7 @@ export const InstallPrompt: React.FC = () => {
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
     if (outcome === 'accepted') {
-      console.log('El usuario aceptó instalar la PWA de Car Check.');
+      console.log('El usuario aceptó instalar la PWA de VEYRA.');
     }
     setDeferredPrompt(null);
   };
@@ -58,7 +58,7 @@ export const InstallPrompt: React.FC = () => {
           </button>
         </div>
         <p className="text-[#6B7280] text-[11px] leading-relaxed">
-          Instala CarCheck para un acceso rápido y uso sin conexión.
+          Instala VEYRA para un acceso rápido y uso sin conexión.
         </p>
         <div className="pt-2 flex gap-2">
           <button

@@ -14,7 +14,7 @@ os.makedirs("static/uploads", exist_ok=True)
 
 # Configurar Rate Limiter usando la IP real del cliente (tras proxies de Render)
 limiter = Limiter(key_func=get_client_ip, default_limits=["100/minute"])
-app = FastAPI(title="Sistema de Inspección Sointer Ltda. API", version="2.0.0")
+app = FastAPI(title="VEYRA — Reporte de Estado Vehicular para Interventoras API", version="2.0.0")
 
 from fastapi.responses import JSONResponse
 
@@ -63,7 +63,7 @@ app.include_router(audit_log.router, prefix="/api")
 
 @app.get("/")
 def read_root():
-    return {"message": "API de Inspección Sointer Ltda. funcionando correctamente"}
+    return {"message": "API VEYRA — Reporte de Estado Vehicular para Interventoras funcionando correctamente"}
 
 @app.get("/health")
 def health_check():

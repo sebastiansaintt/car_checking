@@ -29,7 +29,7 @@ export const SessionTimeoutModal: React.FC<SessionTimeoutModalProps> = ({
         <div>
           <h3 className="text-lg font-bold text-slate-100">¿Sigues ahí?</h3>
           <p className="text-xs text-slate-400 mt-1">
-            Por seguridad, tu sesión en CarChecking expira pronto por inactividad.
+            Por seguridad, tu sesión en VEYRA expira pronto por inactividad.
           </p>
         </div>
 

@@ -46,8 +46,8 @@ export const PlanillaPDF: React.FC<PlanillaPDFProps> = ({ inspeccion, isOpen, on
             {/* Top Corporate Banner */}
             <div className="grid grid-cols-4 border-b-2 border-slate-900 bg-slate-50 items-center text-center py-2 px-3">
               <div className="border-r border-slate-400 font-extrabold text-slate-900 tracking-wider">
-                <span className="text-sm block font-black">SOINTER LTDA.</span>
-                <span className="text-[10px] text-slate-600 font-medium">NIT 900.467.017-4</span>
+                <span className="text-sm block font-black">INTERVENTORÍA TÉCNICA VEHICULAR</span>
+                <span className="text-[10px] text-slate-600 font-medium">NIT 900.000.000-1</span>
               </div>
               <div className="col-span-2 border-r border-slate-400 font-extrabold text-xs uppercase px-2 text-slate-900">
                 PLANILLA DE INSPECCIÓN TÉCNICA Y CONTROL DE VEHÍCULOS
@@ -210,7 +210,7 @@ export const PlanillaPDF: React.FC<PlanillaPDFProps> = ({ inspeccion, isOpen, on
                     <span className="font-bold text-slate-900 block truncate text-[11px]">
                       {f.usuario?.nombre || f.nombre_adicional || `Técnico Inspector #${i + 1}`}
                     </span>
-                    <span className="text-[9px] text-slate-500 uppercase font-semibold">Técnico Inspector Sointer</span>
+                    <span className="text-[9px] text-slate-500 uppercase font-semibold">Técnico Inspector</span>
                   </div>
                 ))
               ) : (
@@ -225,7 +225,7 @@ export const PlanillaPDF: React.FC<PlanillaPDFProps> = ({ inspeccion, isOpen, on
                   <span className="font-bold text-slate-900 block truncate text-[11px]">
                     {inspeccion.creado_por_nombre || 'Técnico Inspector'}
                   </span>
-                  <span className="text-[9px] text-slate-500 uppercase font-semibold">Técnico Inspector Sointer</span>
+                  <span className="text-[9px] text-slate-500 uppercase font-semibold">Técnico Inspector</span>
                 </div>
               )}
             </div>
@@ -245,7 +245,7 @@ export const PlanillaPDF: React.FC<PlanillaPDFProps> = ({ inspeccion, isOpen, on
                   <span className="font-extrabold text-emerald-950 uppercase text-xs">SELLO DE CERTIFICACIÓN Y APROBACIÓN OFICIAL</span>
                 </div>
                 <p className="text-[11px] text-emerald-900 font-medium">
-                  SOINTER LTDA. certifica que el vehículo <strong className="font-mono">{veh?.patente || inspeccion.vehiculo_patente}</strong> ha superado satisfactoriamente los 9 sistemas técnicos de inspección y se encuentra <strong>APROBADO PARA CIRCULAR</strong>.
+                  La entidad interventora certifica que el vehículo <strong className="font-mono">{veh?.patente || inspeccion.vehiculo_patente}</strong> ha superado satisfactoriamente los 9 sistemas técnicos de inspección y se encuentra <strong>APROBADO PARA CIRCULAR</strong>.
                 </p>
                 <div className="text-[10px] text-emerald-800 font-mono pt-1">
                   VIGENCIA HASTA: <strong>{inspeccion.fecha_proxima_revision || '6 MESES'}</strong> | N° CERTIFICADO: <strong>N° {numIns}</strong>

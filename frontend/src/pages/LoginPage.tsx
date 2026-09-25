@@ -57,10 +57,10 @@ export const LoginPage: React.FC = () => {
             </div>
             <div>
               <h1 className="text-[15px] font-semibold text-[#111827] leading-tight tracking-tight">
-                CarCheck
+                VEYRA
               </h1>
               <p className="text-xs text-[#9CA3AF] mt-0.5">
-                Sistema de Inspección — Sointer Ltda.
+                Reporte de estado vehicular para interventoras
               </p>
             </div>
           </div>
@@ -72,7 +72,7 @@ export const LoginPage: React.FC = () => {
                 label="Correo electrónico"
                 type="email"
                 id="login-email"
-                placeholder="nombre@sointer.com"
+                placeholder="usuario@ejemplo.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 autoComplete="email"

@@ -28,9 +28,9 @@ def seed_database():
 
         # 1. Sembrado de Empresas Contratistas
         empresas = [
-            {"nombre": "Epromecánica S.A.S.", "rut": "900.123.456-1", "contacto": "contacto@epromecanica.com"},
-            {"nombre": "Servicios Cerrejón Ltda.", "rut": "800.987.654-2", "contacto": "operaciones@cerrejon.com"},
-            {"nombre": "Contratistas Mineros del Norte", "rut": "901.555.777-3", "contacto": "flota@minerosnorte.com"}
+            {"nombre": "Transportes del Norte S.A.S.", "rut": "900.123.456-1", "contacto": "contacto@transportesnorte.com"},
+            {"nombre": "Logística y Servicios Andina S.A.S.", "rut": "800.987.654-2", "contacto": "operaciones@logisticaandina.com"},
+            {"nombre": "Operaciones Mineras e Industriales S.A.S.", "rut": "901.555.777-3", "contacto": "flota@operacionesmineras.com"}
         ]
         for emp in empresas:
             emp_obj = EmpresaContratista(nombre=emp["nombre"], rut=emp["rut"], contacto=emp["contacto"], activo=True)
@@ -60,7 +60,7 @@ def seed_database():
                 "cargo": "Programador de Operaciones"
             },
             {
-                "nombre": "Administrador Sointer",
+                "nombre": "Administrador VEYRA",
                 "email": "admin@carchecking.com",
                 "password": os.environ.get("SEED_ADMIN_PW", ""),
                 "rol": "administrador",

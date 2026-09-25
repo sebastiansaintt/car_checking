@@ -1,11 +1,11 @@
-# Requerimientos del Proyecto — Sistema de Inspección Sointer Ltda.
+# Requerimientos del Proyecto — VEYRA (Reporte de Estado Vehicular para Interventoras)
 **Versión:** 2.0 · **Fecha:** 2026-07-31
 
 ---
 
 ## 1. Descripción General
 
-Sistema web PWA para digitalizar el proceso de inspección técnica de vehículos contratistas realizado por **Sointer Ltda.** bajo el formato estándar FO-M4-P13-96. El sistema reemplaza las planillas físicas, garantizando trazabilidad completa, seguimiento de hallazgos y aprobación formal auditable.
+Sistema web PWA para digitalizar el proceso de inspección técnica de vehículos contratistas realizado por la **empresa interventora** bajo el formato estándar FO-M4-P13-96. El sistema reemplaza las planillas físicas, garantizando trazabilidad completa, seguimiento de hallazgos y aprobación formal auditable.
 
 ---
 
@@ -13,7 +13,7 @@ Sistema web PWA para digitalizar el proceso de inspección técnica de vehículo
 
 | Rol del sistema | Descripción operativa |
 |---|---|
-| `tecnico_inspector` | Técnico de Sointer que realiza la inspección en campo |
+| `tecnico_inspector` | Técnico inspector que realiza la inspección en campo |
 | `jefe_inspeccion` | Responsable de supervisar, aprobar y exportar reportes |
 | `administrador` | Gestiona usuarios, catálogos y empresas contratistas |
 
@@ -84,7 +84,7 @@ Sistema web PWA para digitalizar el proceso de inspección técnica de vehículo
 
 ### RF-10 · Exportación
 - RF-10.1: El `jefe_inspeccion` puede exportar inspecciones a **Excel (.xlsx)** y **PDF**.
-- RF-10.2: El PDF debe ser fiel al formato visual de la planilla FO-M4-P13-96 de Sointer.
+- RF-10.2: El PDF debe ser fiel al formato visual de la planilla estándar FO-M4-P13-96.
 - RF-10.3: El PDF incluye el sello digital de aprobación cuando aplica.
 - RF-10.4: Toda exportación queda registrada en el AuditLog.
 
@@ -154,7 +154,7 @@ Sistema web PWA para digitalizar el proceso de inspección técnica de vehículo
 
 ## 5. Restricciones y Supuestos
 
-- La empresa Sointer Ltda. administra el sistema: ningún externo (empresa contratista) tiene acceso.
+- La entidad interventora administra el sistema: ningún externo (empresa contratista) tiene acceso.
 - Las credenciales de usuario se crean manualmente por el administrador (no hay registro público).
 - El almacenamiento de imágenes y firmas es local en MVP (simulación de S3); en producción se migra a S3/R2.
 - El sistema opera principalmente en Colombia (zona horaria `America/Bogota`).

@@ -23,7 +23,7 @@ def test_notificacion_lifecycle(db_session):
     user = Usuario(
         id=uuid.uuid4(),
         nombre="Jefe Manuel Ramos",
-        email="manuel@sointer.com",
+        email="manuel@veyra.com",
         password_hash="hash",
         rol="jefe_inspeccion",
         activo=True
