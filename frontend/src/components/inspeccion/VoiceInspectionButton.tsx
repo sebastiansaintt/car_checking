@@ -24,8 +24,25 @@ export const VoiceInspectionButton: React.FC<VoiceInspectionButtonProps> = ({
   } = useAudioRecorder();
 
   const [isProcessing, setIsProcessing] = useState<boolean>(false);
+  const [processingSeconds, setProcessingSeconds] = useState<number>(0);
   const [apiError, setApiError] = useState<string | null>(null);
   const [isOnline, setIsOnline] = useState<boolean>(navigator.onLine);
+
+  // Monitor del tiempo transcurrido durante el procesamiento
+  useEffect(() => {
+    let interval: number | null = null;
+    if (isProcessing) {
+      setProcessingSeconds(0);
+      interval = window.setInterval(() => {
+        setProcessingSeconds(prev => prev + 1);
+      }, 1000);
+    } else {
+      setProcessingSeconds(0);
+    }
+    return () => {
+      if (interval !== null) clearInterval(interval);
+    };
+  }, [isProcessing]);
 
   // Monitor de conectividad online/offline
   useEffect(() => {
@@ -49,6 +66,30 @@ export const VoiceInspectionButton: React.FC<VoiceInspectionButtonProps> = ({
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const getProcessingMessage = (sec: number): { title: string; subtitle: string } => {
+    if (sec < 3) {
+      return {
+        title: `Audio recibido · Conectando (${sec}s)...`,
+        subtitle: 'Enviando dictado a Google Gemini...',
+      };
+    } else if (sec < 7) {
+      return {
+        title: `Transcribiendo y analizando fallas (${sec}s)...`,
+        subtitle: 'Extrayendo marca, modelo, km y checklist...',
+      };
+    } else if (sec < 12) {
+      return {
+        title: `Estructurando datos en tiempo real (${sec}s)...`,
+        subtitle: 'Asociando componentes al catálogo oficial...',
+      };
+    } else {
+      return {
+        title: `Congestión en Google · Reintentando (${sec}s)...`,
+        subtitle: 'Cambiando a modelo alternativo con backoff...',
+      };
+    }
   };
 
   const handleStart = async () => {
@@ -103,12 +144,30 @@ export const VoiceInspectionButton: React.FC<VoiceInspectionButtonProps> = ({
     );
   }
 
-  // 2. Estado Procesando con Gemini
+  // 2. Estado Procesando con Gemini (con timer en vivo y animación activa)
   if (isProcessing) {
+    const status = getProcessingMessage(processingSeconds);
     return (
-      <div className="flex items-center gap-2.5 px-3.5 py-1.5 rounded-lg bg-blue-50 border border-blue-200 text-blue-800 text-xs font-medium shadow-sm animate-pulse">
-        <Loader2 className="w-4 h-4 text-blue-600 animate-spin shrink-0" />
-        <span>Gemini interpretando dictado...</span>
+      <div className="flex items-center gap-3 px-3.5 py-2 rounded-xl bg-gradient-to-r from-blue-50 via-indigo-50 to-blue-50 border border-blue-200/90 text-blue-900 shadow-sm transition-all duration-200">
+        <div className="relative flex items-center justify-center shrink-0">
+          <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
+        </div>
+        <div className="flex flex-col text-left">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-semibold text-blue-950">
+              {status.title}
+            </span>
+            {/* Animación activa de audio recibido */}
+            <div className="flex items-end gap-0.5 h-3">
+              <span className="w-0.5 bg-blue-500 animate-pulse" style={{ height: '100%' }} />
+              <span className="w-0.5 bg-indigo-500 animate-pulse" style={{ height: '60%', animationDelay: '150ms' }} />
+              <span className="w-0.5 bg-blue-600 animate-pulse" style={{ height: '80%', animationDelay: '300ms' }} />
+            </div>
+          </div>
+          <span className="text-[10px] text-blue-700/80 font-medium mt-0.5">
+            {status.subtitle}
+          </span>
+        </div>
       </div>
     );
   }

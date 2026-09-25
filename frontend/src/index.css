@@ -139,7 +139,7 @@
 
 /* Mobile topbar (only visible when sidebar is hidden) */
 .mobile-topbar {
-  @apply h-12 bg-white border-b border-[#E5E7EB] flex items-center px-4 gap-3;
+  @apply sticky top-0 z-30 h-12 bg-white border-b border-[#E5E7EB] flex items-center px-4 gap-3;
 }
 
 /* Sidebar overlay for mobile */
