@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "60201882-b173-49ba-a5ef-afc0f7739f55",
+  "status": "current",
+  "command": "deliver",
+  "type": "workflow",
+  "input": "C:\\Users\\Sebastian\\Desktop\\car_checking\\.archify\\workflow-casos-de-uso-20261014-120700\\candidate.json",
+  "output": "C:\\Users\\Sebastian\\Desktop\\car_checking\\.archify\\workflow-casos-de-uso-20261014-120700\\casos-de-uso.html",
+  "specification": {
+    "sha256": "ec72f3a9d98329a334bade52ec8e7c3b16d83c55d04cf2d72178f8f7a376a47b",
+    "bytes": 7278
+  },
+  "artifact": {
+    "sha256": "453b6547f7fd173585bc3ee92959bbfce845f7b7f48fd4124c0931926e6d96c1",
+    "bytes": 833060
+  }
+}

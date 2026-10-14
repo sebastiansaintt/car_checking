@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "8350e6a3-a211-485e-b086-a3eb81fadf6d",
+  "status": "current",
+  "command": "deliver",
+  "type": "sequence",
+  "input": "C:\\Users\\Sebastian\\Desktop\\car_checking\\.archify\\sequence-comunicacion-capas-20261014-120700\\candidate.json",
+  "output": "C:\\Users\\Sebastian\\Desktop\\car_checking\\.archify\\sequence-comunicacion-capas-20261014-120700\\comunicacion-capas.html",
+  "specification": {
+    "sha256": "665eb803d5369c76ae64f6842c7d67da6ba4433118c4527ed14c1bd0da4b2e6a",
+    "bytes": 7228
+  },
+  "artifact": {
+    "sha256": "4846499c1296e6ecd5b81b7a059493b9c682d0f9bcb35b78bf6d32a0ad294f23",
+    "bytes": 830488
+  }
+}

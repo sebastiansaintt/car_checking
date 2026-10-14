@@ -1,0 +1,198 @@
+{
+  "schema_version": 1,
+  "diagram_type": "tree",
+  "meta": {
+    "title": "Stack Tecnológico — VEYRA CarChecking",
+    "locale": "es",
+    "output": ".archify/tree-tech-stack-20261014-120700/tech-stack.html",
+    "quality_profile": "showcase",
+    "repository": {
+      "url": "https://github.com/sebastiansaintt/car_checking",
+      "revision": "aa16d5231b84bd07d46788a55462f765aac7dd83"
+    }
+  },
+  "layout": {
+    "direction": "right"
+  },
+  "nodes": [
+    {
+      "id": "veyra_stack",
+      "label": "VEYRA CarChecking Stack",
+      "sublabel": "PWA Monolito Modular"
+    },
+    {
+      "id": "frontend",
+      "label": "Frontend (PWA)",
+      "parent": "veyra_stack",
+      "sublabel": "Capa de Presentación"
+    },
+    {
+      "id": "react",
+      "label": "React 18 & TypeScript",
+      "parent": "frontend",
+      "sublabel": "UI tipada y componentes modulares",
+      "sources": [{ "path": "frontend/package.json", "line": 1 }]
+    },
+    {
+      "id": "vite",
+      "label": "Vite",
+      "parent": "frontend",
+      "sublabel": "Build tool y HMR ultrarrápido"
+    },
+    {
+      "id": "tailwind",
+      "label": "TailwindCSS + Lucide",
+      "parent": "frontend",
+      "sublabel": "Diseño móvil en campo y escritorio"
+    },
+    {
+      "id": "pwa",
+      "label": "Service Worker & PWA",
+      "parent": "frontend",
+      "sublabel": "Caché de activos e instalabilidad"
+    },
+    {
+      "id": "indexeddb",
+      "label": "IndexedDB",
+      "parent": "frontend",
+      "sublabel": "Cola local de sincronización offline"
+    },
+    {
+      "id": "backend",
+      "label": "Backend (Core API)",
+      "parent": "veyra_stack",
+      "sublabel": "Capa de Lógica y Servicios"
+    },
+    {
+      "id": "fastapi",
+      "label": "FastAPI + Uvicorn",
+      "parent": "backend",
+      "sublabel": "Servidor y framework ASGI asíncrono",
+      "sources": [{ "path": "backend/app/main.py", "line": 1 }]
+    },
+    {
+      "id": "pydantic",
+      "label": "Pydantic v2",
+      "parent": "backend",
+      "sublabel": "Validación estricta de DTOs y schemas"
+    },
+    {
+      "id": "uv",
+      "label": "uv",
+      "parent": "backend",
+      "sublabel": "Gestor de paquetes Python de alta velocidad"
+    },
+    {
+      "id": "security",
+      "label": "Argon2id & PyJWT",
+      "parent": "backend",
+      "sublabel": "Criptografía y cookies httpOnly"
+    },
+    {
+      "id": "openpyxl",
+      "label": "OpenPyXL",
+      "parent": "backend",
+      "sublabel": "Exportación de planillas técnicas Excel"
+    },
+    {
+      "id": "data_layer",
+      "label": "Datos y Caché",
+      "parent": "veyra_stack",
+      "sublabel": "Persistencia Relacional y Memoria"
+    },
+    {
+      "id": "postgres",
+      "label": "PostgreSQL 16",
+      "parent": "data_layer",
+      "sublabel": "Base de datos relacional principal ACID",
+      "sources": [{ "path": "backend/app/core/database.py", "line": 1 }]
+    },
+    {
+      "id": "sqlalchemy",
+      "label": "SQLAlchemy 2.0",
+      "parent": "data_layer",
+      "sublabel": "ORM moderno con repositorios tipados"
+    },
+    {
+      "id": "alembic",
+      "label": "Alembic",
+      "parent": "data_layer",
+      "sublabel": "Control de versiones y migraciones de BD"
+    },
+    {
+      "id": "redis",
+      "label": "Redis 7",
+      "parent": "data_layer",
+      "sublabel": "Rate limit token bucket y blacklist JWT"
+    },
+    {
+      "id": "ai_services",
+      "label": "IA y Servicios",
+      "parent": "veyra_stack",
+      "sublabel": "Integraciones Externas"
+    },
+    {
+      "id": "gemini",
+      "label": "Google Gemini API",
+      "parent": "ai_services",
+      "sublabel": "Transcripción de voz a formulario técnico"
+    },
+    {
+      "id": "gmail",
+      "label": "Gmail API (OAuth2)",
+      "parent": "ai_services",
+      "sublabel": "Notificaciones de edición y borrado"
+    },
+    {
+      "id": "storage",
+      "label": "Almacenamiento S3",
+      "parent": "ai_services",
+      "sublabel": "Firmas digitales y reportes PDF"
+    },
+    {
+      "id": "devops",
+      "label": "DevOps e Infraestructura",
+      "parent": "veyra_stack",
+      "sublabel": "Despliegue y Contenerización"
+    },
+    {
+      "id": "docker",
+      "label": "Docker & Compose",
+      "parent": "devops",
+      "sublabel": "Orquestación multicontenedor local y prod",
+      "sources": [{ "path": "docker-compose.yml", "line": 1 }]
+    },
+    {
+      "id": "git",
+      "label": "Git & GitHub",
+      "parent": "devops",
+      "sublabel": "Trazabilidad completa de código"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Frontend Offline-First",
+      "items": [
+        "Vite + React 18 con TypeScript garantizan rapidez de carga y tipado robusto.",
+        "PWA permite instalación en dispositivos móviles y funcionamiento sin conexión en zonas remotas."
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Backend de Alto Rendimiento",
+      "items": [
+        "FastAPI con Uvicorn proporciona procesamiento asíncrono y autodocumentación OpenAPI.",
+        "Gestión de dependencias ultrarrápida con uv y validación estricta de datos con Pydantic v2."
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Criptografía y Persistencia ACID",
+      "items": [
+        "PostgreSQL 16 con SQLAlchemy 2.0 y Alembic para transacciones seguras y migraciones reproducibles.",
+        "Redis para invalidación real de sesiones JWT y protección contra ataques de fuerza bruta."
+      ]
+    }
+  ]
+}

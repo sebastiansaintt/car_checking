@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "architecture",
+  "quality": "showcase",
+  "specification": {
+    "path": "C:\\Users\\Sebastian\\Desktop\\car_checking\\.archify\\architecture-carchecking-general-20261014-120700\\candidate.json",
+    "sha256": "d04181667c23054489c2eb05ac9937d5e0a8ecfd90f81282e44ada4ecd9bf8e1",
+    "bytes": 7813
+  },
+  "artifact": {
+    "path": "C:\\Users\\Sebastian\\Desktop\\car_checking\\.archify\\architecture-carchecking-general-20261014-120700\\carchecking-general.html",
+    "sha256": "de5c220756db72cf2755fa3f30c25b9bd0362b5f2e51879c5a8301c3d9d0f605",
+    "bytes": 846470
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "C:\\Users\\Sebastian\\Desktop\\car_checking\\.archify\\architecture-carchecking-general-20261014-120700\\review-2\\carchecking-general.finalize.json",
+    "summaryReceipt": "C:\\Users\\Sebastian\\Desktop\\car_checking\\.archify\\architecture-carchecking-general-20261014-120700\\review-2\\carchecking-general.finalize-summary.json",
+    "browserCheckReceipt": "C:\\Users\\Sebastian\\Desktop\\car_checking\\.archify\\architecture-carchecking-general-20261014-120700\\review-2\\carchecking-general.browser-check.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.1.0",
+    "availableVersion": "3.1.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-10-14T17:08:37.288Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 5774,
+  "visualReviewRecommendation": {
+    "action": "inspect-route-readability",
+    "signals": {
+      "resolvedCrossovers": 1
+    },
+    "reason": "Automated gates passed, but crossings or detours still need perceptual review before claiming visual quality.",
+    "affectedRoutes": {
+      "crossings": [
+        {
+          "left": {
+            "id": "ingeniero-ui",
+            "from": "ingeniero",
+            "to": "pwa_ui",
+            "label": "aprobación",
+            "collectionIndex": 1,
+            "artifactIndex": 2
+          },
+          "right": {
+            "id": "admin-ui",
+            "from": "admin",
+            "to": "pwa_ui",
+            "label": "gestión",
+            "collectionIndex": 2,
+            "artifactIndex": 3
+          },
+          "point": [
+            236,
+            358
+          ],
+          "sharedNode": "pwa_ui"
+        }
+      ],
+      "detours": [],
+      "truncated": false
+    },
+    "hints": [
+      "ingeniero → pwa_ui and admin → pwa_ui cross next to pwa_ui: move node ingeniero or admin so the two reach pwa_ui from different sides (for example one level with it, one directly above or below it)."
+    ],
+    "repair": "Trace these relationships at the desktop viewport. For Architecture, use references/architecture-layout-repair.md: reflow a blocked main path or tangled connected scene, and repair an isolated defect locally only when the surrounding composition is accepted. Preserve all semantic content and user-fixed geometry. Rerun finalize once after the edit."
+  }
+}

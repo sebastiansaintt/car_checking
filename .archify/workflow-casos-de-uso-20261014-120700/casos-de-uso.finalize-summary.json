@@ -1,0 +1,47 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "workflow",
+  "quality": "showcase",
+  "specification": {
+    "path": "C:\\Users\\Sebastian\\Desktop\\car_checking\\.archify\\workflow-casos-de-uso-20261014-120700\\candidate.json",
+    "sha256": "ec72f3a9d98329a334bade52ec8e7c3b16d83c55d04cf2d72178f8f7a376a47b",
+    "bytes": 7278
+  },
+  "artifact": {
+    "path": "C:\\Users\\Sebastian\\Desktop\\car_checking\\.archify\\workflow-casos-de-uso-20261014-120700\\casos-de-uso.html",
+    "sha256": "453b6547f7fd173585bc3ee92959bbfce845f7b7f48fd4124c0931926e6d96c1",
+    "bytes": 833060
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "C:\\Users\\Sebastian\\Desktop\\car_checking\\.archify\\workflow-casos-de-uso-20261014-120700\\casos-de-uso.finalize.json",
+    "summaryReceipt": "C:\\Users\\Sebastian\\Desktop\\car_checking\\.archify\\workflow-casos-de-uso-20261014-120700\\casos-de-uso.finalize-summary.json",
+    "browserCheckReceipt": "C:\\Users\\Sebastian\\Desktop\\car_checking\\.archify\\workflow-casos-de-uso-20261014-120700\\casos-de-uso.browser-check.json"
+  },
+  "update": {
+    "status": "current",
+    "installedVersion": "3.1.0",
+    "availableVersion": "3.1.0",
+    "releaseNotes": null,
+    "checkedAt": "2026-10-14T17:08:37.288Z",
+    "source": "cache",
+    "noticeRequired": false,
+    "noticeText": null
+  },
+  "visualReview": "not-requested",
+  "durationMs": 4636
+}

@@ -1,0 +1,387 @@
+{
+  "schema_version": 1,
+  "diagram_type": "erd",
+  "meta": {
+    "title": "Modelo de Datos Entidad-Relación — VEYRA CarChecking",
+    "locale": "es",
+    "output": ".archify/erd-base-de-datos-20261014-120700/base-de-datos.html",
+    "quality_profile": "standard",
+    "repository": {
+      "url": "https://github.com/sebastiansaintt/car_checking",
+      "revision": "aa16d5231b84bd07d46788a55462f765aac7dd83"
+    },
+    "views": [
+      {
+        "id": "nucleo_inspeccion",
+        "label": "Núcleo de Inspección",
+        "focus": ["inspecciones", "vehiculos", "evaluaciones_sistema", "checklist_items"],
+        "note": "Cadena inmutable de inspecciones, evaluación de los 9 sistemas y respuestas de checklist."
+      },
+      {
+        "id": "seguridad_auditoria",
+        "label": "Seguridad y Auditoría",
+        "focus": ["usuarios", "audit_logs", "notificaciones"],
+        "note": "Roles, usuarios del sistema, notificaciones de eventos y registro transversal de auditoría."
+      },
+      {
+        "id": "flota_catalogo",
+        "label": "Flota y Catálogos",
+        "focus": ["vehiculos", "empresas_contratistas", "catalogo_sistemas", "catalogo_checklist"],
+        "note": "Vehículos de flota asignados a contratistas y catálogo normalizado de sistemas técnicos."
+      }
+    ]
+  },
+  "layout": {
+    "mode": "grid",
+    "gapX": 64,
+    "gapY": 28
+  },
+  "entities": [
+    {
+      "id": "usuarios",
+      "label": "usuarios",
+      "tag": "seguridad",
+      "row": 0,
+      "col": 0,
+      "sources": [{ "path": "backend/app/models/usuario.py", "line": 8 }],
+      "attributes": [
+        { "name": "id", "type": "uuid", "key": "pk" },
+        { "name": "nombre", "type": "varchar(100)" },
+        { "name": "email", "type": "varchar(100)", "key": "uk" },
+        { "name": "password_hash", "type": "varchar(255)" },
+        { "name": "rol", "type": "varchar(30)" },
+        { "name": "activo", "type": "boolean" },
+        { "name": "created_at", "type": "timestamptz" }
+      ]
+    },
+    {
+      "id": "audit_logs",
+      "label": "audit_logs",
+      "tag": "seguridad",
+      "row": 1,
+      "col": 0,
+      "sources": [{ "path": "backend/app/models/audit_log.py", "line": 7 }],
+      "attributes": [
+        { "name": "id", "type": "uuid", "key": "pk" },
+        { "name": "usuario_id", "type": "uuid", "key": "fk", "references": "usuarios.id" },
+        { "name": "accion", "type": "varchar(50)" },
+        { "name": "entidad", "type": "varchar(50)" },
+        { "name": "entidad_id", "type": "varchar(50)" },
+        { "name": "detalle", "type": "jsonb" },
+        { "name": "timestamp", "type": "timestamptz" }
+      ]
+    },
+    {
+      "id": "notificaciones",
+      "label": "notificaciones",
+      "tag": "seguridad",
+      "row": 2,
+      "col": 0,
+      "sources": [{ "path": "backend/app/models/notificacion.py", "line": 7 }],
+      "attributes": [
+        { "name": "id", "type": "uuid", "key": "pk" },
+        { "name": "usuario_id", "type": "uuid", "key": "fk", "references": "usuarios.id" },
+        { "name": "tipo", "type": "varchar(50)" },
+        { "name": "titulo", "type": "varchar(150)" },
+        { "name": "mensaje", "type": "text" },
+        { "name": "leida", "type": "boolean" },
+        { "name": "created_at", "type": "timestamptz" }
+      ]
+    },
+    {
+      "id": "empresas_contratistas",
+      "label": "empresas_contratistas",
+      "tag": "flota",
+      "row": 0,
+      "col": 1,
+      "sources": [{ "path": "backend/app/models/empresa_contratista.py", "line": 6 }],
+      "attributes": [
+        { "name": "id", "type": "uuid", "key": "pk" },
+        { "name": "nombre", "type": "varchar(150)", "key": "uk" },
+        { "name": "nit", "type": "varchar(30)" },
+        { "name": "contacto", "type": "varchar(100)" },
+        { "name": "telefono", "type": "varchar(30)" },
+        { "name": "activo", "type": "boolean" }
+      ]
+    },
+    {
+      "id": "vehiculos",
+      "label": "vehiculos",
+      "tag": "flota",
+      "row": 1,
+      "col": 1,
+      "sources": [{ "path": "backend/app/models/vehiculo.py", "line": 8 }],
+      "attributes": [
+        { "name": "id", "type": "uuid", "key": "pk" },
+        { "name": "patente", "type": "varchar(10)", "key": "uk" },
+        { "name": "marca", "type": "varchar(50)" },
+        { "name": "modelo", "type": "varchar(50)" },
+        { "name": "anio", "type": "integer" },
+        { "name": "kilometraje_actual", "type": "integer" },
+        { "name": "empresa_contratista_id", "type": "uuid", "key": "fk", "references": "empresas_contratistas.id" },
+        { "name": "estado", "type": "varchar(20)" }
+      ]
+    },
+    {
+      "id": "catalogo_sistemas",
+      "label": "catalogo_sistemas",
+      "tag": "catalogo",
+      "row": 0,
+      "col": 2,
+      "sources": [{ "path": "backend/app/models/catalogo_sistema.py", "line": 6 }],
+      "attributes": [
+        { "name": "id", "type": "uuid", "key": "pk" },
+        { "name": "codigo", "type": "varchar(20)", "key": "uk" },
+        { "name": "nombre", "type": "varchar(100)" },
+        { "name": "orden", "type": "integer" },
+        { "name": "activo", "type": "boolean" }
+      ]
+    },
+    {
+      "id": "catalogo_checklist",
+      "label": "catalogo_checklist",
+      "tag": "catalogo",
+      "row": 1,
+      "col": 2,
+      "sources": [{ "path": "backend/app/models/inspeccion.py", "line": 10 }],
+      "attributes": [
+        { "name": "id", "type": "uuid", "key": "pk" },
+        { "name": "sistema_id", "type": "uuid", "key": "fk", "references": "catalogo_sistemas.id" },
+        { "name": "codigo_item", "type": "varchar(20)" },
+        { "name": "nombre", "type": "varchar(150)" },
+        { "name": "descripcion", "type": "text" },
+        { "name": "activo", "type": "boolean" }
+      ]
+    },
+    {
+      "id": "inspecciones",
+      "label": "inspecciones",
+      "tag": "operaciones",
+      "row": 0,
+      "col": 3,
+      "width": 260,
+      "sources": [{ "path": "backend/app/models/inspeccion.py", "line": 24 }],
+      "attributes": [
+        { "name": "id", "type": "uuid", "key": "pk" },
+        { "name": "numero_inspeccion", "type": "integer", "key": "uk" },
+        { "name": "numero_revision", "type": "integer" },
+        { "name": "inspeccion_primaria_id", "type": "uuid", "key": "fk", "references": "inspecciones.id" },
+        { "name": "vehiculo_id", "type": "uuid", "key": "fk", "references": "vehiculos.id" },
+        { "name": "empresa_contratista_id", "type": "uuid", "key": "fk", "references": "empresas_contratistas.id" },
+        { "name": "creado_por_id", "type": "uuid", "key": "fk", "references": "usuarios.id" },
+        { "name": "fecha", "type": "timestamptz" },
+        { "name": "kilometraje", "type": "integer" },
+        { "name": "estado", "type": "varchar(30)" },
+        { "name": "resultado_general", "type": "varchar(30)" },
+        { "name": "sello_url", "type": "text" }
+      ]
+    },
+    {
+      "id": "evaluaciones_sistema",
+      "label": "evaluaciones_sistema",
+      "tag": "operaciones",
+      "row": 1,
+      "col": 3,
+      "sources": [{ "path": "backend/app/models/evaluacion_sistema.py", "line": 6 }],
+      "attributes": [
+        { "name": "id", "type": "uuid", "key": "pk" },
+        { "name": "inspeccion_id", "type": "uuid", "key": "fk", "references": "inspecciones.id" },
+        { "name": "sistema_id", "type": "uuid", "key": "fk", "references": "catalogo_sistemas.id" },
+        { "name": "estado_sistema", "type": "varchar(20)" }
+      ]
+    },
+    {
+      "id": "checklist_items",
+      "label": "checklist_items",
+      "tag": "operaciones",
+      "row": 2,
+      "col": 3,
+      "sources": [{ "path": "backend/app/models/inspeccion.py", "line": 116 }],
+      "attributes": [
+        { "name": "id", "type": "uuid", "key": "pk" },
+        { "name": "inspeccion_id", "type": "uuid", "key": "fk", "references": "inspecciones.id" },
+        { "name": "catalogo_id", "type": "uuid", "key": "fk", "references": "catalogo_checklist.id" },
+        { "name": "valor", "type": "varchar(20)" },
+        { "name": "comentario", "type": "text" }
+      ]
+    },
+    {
+      "id": "hallazgos",
+      "label": "hallazgos",
+      "tag": "operaciones",
+      "row": 3,
+      "col": 3,
+      "sources": [{ "path": "backend/app/models/hallazgo.py", "line": 7 }],
+      "attributes": [
+        { "name": "id", "type": "uuid", "key": "pk" },
+        { "name": "inspeccion_id", "type": "uuid", "key": "fk", "references": "inspecciones.id" },
+        { "name": "item_id", "type": "uuid", "key": "fk", "references": "checklist_items.id" },
+        { "name": "descripcion", "type": "text" },
+        { "name": "severidad", "type": "varchar(20)" }
+      ]
+    },
+    {
+      "id": "firmas_tecnicos",
+      "label": "firmas_tecnicos",
+      "tag": "operaciones",
+      "row": 4,
+      "col": 3,
+      "sources": [{ "path": "backend/app/models/firma_tecnico.py", "line": 6 }],
+      "attributes": [
+        { "name": "id", "type": "uuid", "key": "pk" },
+        { "name": "inspeccion_id", "type": "uuid", "key": "fk", "references": "inspecciones.id" },
+        { "name": "tecnico_id", "type": "uuid", "key": "fk", "references": "usuarios.id" },
+        { "name": "firma_url", "type": "text" },
+        { "name": "fecha_firma", "type": "timestamptz" }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "id": "rel_audit_usuario",
+      "from": "audit_logs",
+      "to": "usuarios",
+      "fromCardinality": "many",
+      "toCardinality": "one",
+      "label": "registra"
+    },
+    {
+      "id": "rel_notif_usuario",
+      "from": "notificaciones",
+      "to": "usuarios",
+      "fromCardinality": "many",
+      "toCardinality": "one",
+      "label": "notifica"
+    },
+    {
+      "id": "rel_vehiculo_empresa",
+      "from": "vehiculos",
+      "to": "empresas_contratistas",
+      "fromCardinality": "many",
+      "toCardinality": "one",
+      "label": "pertenece"
+    },
+    {
+      "id": "rel_checklist_sistema",
+      "from": "catalogo_checklist",
+      "to": "catalogo_sistemas",
+      "fromCardinality": "many",
+      "toCardinality": "one",
+      "label": "agrupa"
+    },
+    {
+      "id": "rel_inspeccion_vehiculo",
+      "from": "inspecciones",
+      "to": "vehiculos",
+      "fromCardinality": "many",
+      "toCardinality": "one",
+      "label": "inspecciona"
+    },
+    {
+      "id": "rel_inspeccion_empresa",
+      "from": "inspecciones",
+      "to": "empresas_contratistas",
+      "fromCardinality": "many",
+      "toCardinality": "one",
+      "label": "contratista"
+    },
+    {
+      "id": "rel_inspeccion_usuario",
+      "from": "inspecciones",
+      "to": "usuarios",
+      "fromCardinality": "many",
+      "toCardinality": "one",
+      "label": "autor"
+    },
+    {
+      "id": "rel_eval_inspeccion",
+      "from": "evaluaciones_sistema",
+      "to": "inspecciones",
+      "fromCardinality": "many",
+      "toCardinality": "one",
+      "label": "evalúa"
+    },
+    {
+      "id": "rel_eval_sistema",
+      "from": "evaluaciones_sistema",
+      "to": "catalogo_sistemas",
+      "fromCardinality": "many",
+      "toCardinality": "one",
+      "label": "sistema"
+    },
+    {
+      "id": "rel_item_inspeccion",
+      "from": "checklist_items",
+      "to": "inspecciones",
+      "fromCardinality": "many",
+      "toCardinality": "one",
+      "label": "contiene"
+    },
+    {
+      "id": "rel_item_catalogo",
+      "from": "checklist_items",
+      "to": "catalogo_checklist",
+      "fromCardinality": "many",
+      "toCardinality": "one",
+      "label": "ítem"
+    },
+    {
+      "id": "rel_hallazgo_inspeccion",
+      "from": "hallazgos",
+      "to": "inspecciones",
+      "fromCardinality": "many",
+      "toCardinality": "one",
+      "label": "detecta"
+    },
+    {
+      "id": "rel_hallazgo_item",
+      "from": "hallazgos",
+      "to": "checklist_items",
+      "fromCardinality": "many",
+      "toCardinality": "one",
+      "label": "asocia"
+    },
+    {
+      "id": "rel_firma_inspeccion",
+      "from": "firmas_tecnicos",
+      "to": "inspecciones",
+      "fromCardinality": "many",
+      "toCardinality": "one",
+      "label": "certifica"
+    },
+    {
+      "id": "rel_firma_usuario",
+      "from": "firmas_tecnicos",
+      "to": "usuarios",
+      "fromCardinality": "many",
+      "toCardinality": "one",
+      "label": "técnico"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Arquitectura de Tablas Normalizadas",
+      "items": [
+        "Separación de dominios en 4 columnas: Seguridad, Flota, Catálogo de Inspección y Operaciones.",
+        "UUID como identificador primario para prevenir enumeración secuencial externa y colisiones."
+      ]
+    },
+    {
+      "dot": "rose",
+      "title": "Inmutabilidad de Inspecciones",
+      "items": [
+        "La autoreferencia inspeccion_primaria_id permite generar subregistros sin sobreescribir datos históricos.",
+        "AuditLog en formato JSONB preserva los diferenciales (diffs) completos antes y después de cada cambio."
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Evaluación por Sistemas y Hallazgos",
+      "items": [
+        "Evaluación técnica consolidada para los 9 sistemas vehiculares (motor, frenos, eléctrico, etc.).",
+        "Checklist granular con detección y registro especializado de hallazgos subestándar."
+      ]
+    }
+  ]
+}

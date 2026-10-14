@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "28b982be-578a-42f0-9022-07eec18b2b4c",
+  "status": "current",
+  "command": "deliver",
+  "type": "erd",
+  "input": "C:\\Users\\Sebastian\\Desktop\\car_checking\\.archify\\erd-base-de-datos-20261014-120700\\candidate.json",
+  "output": "C:\\Users\\Sebastian\\Desktop\\car_checking\\.archify\\erd-base-de-datos-20261014-120700\\base-de-datos.html",
+  "specification": {
+    "sha256": "a9e9027ea40f5dd305dd337633391f212333af046567a7b32962c8b2d5095fbe",
+    "bytes": 13278
+  },
+  "artifact": {
+    "sha256": "1f00bbaa695e8fa9c0cca305971aaf621e6a70c7c2885a51c38e0a6f539d100e",
+    "bytes": 884967
+  }
+}
