@@ -6,15 +6,9 @@ El objetivo principal es reemplazar las planillas físicas (`FO-M4-P13-96`) por 
 
 ---
 
-## 🛠️ Stack Tecnológico
+## Stack Tecnológico
 
 El sistema fue concebido como un monolito modular moderno, priorizando velocidad de desarrollo, seguridad de grado corporativo y bajo costo operacional.
-
-> **Diagrama del Stack Tecnológico**
->
-> ![Stack Tecnológico](docs/tech-stack.png)
->
-> 🔗 *[Ver Diagrama Interactivo del Stack Tecnológico](.archify/tree-tech-stack-20261014-120700/tech-stack.html)*
 
 * **Frontend (PWA)**:
   * **React 18 & TypeScript**: Componentes declarativos y tipado estático estricto.
@@ -43,7 +37,7 @@ El sistema fue concebido como un monolito modular moderno, priorizando velocidad
 
 ---
 
-## 🏛️ Arquitectura del Sistema
+## Arquitectura del Sistema
 
 La aplicación sigue una **arquitectura monolítica en capas** bajo el patrón **MVC / Routers-Services-Repositories**.
 
@@ -65,7 +59,7 @@ Se seleccionó un monolito modular porque simplifica el despliegue, elimina la s
 
 ---
 
-## 🗄️ Modelo de Datos (Base de Datos)
+## Modelo de Datos (Base de Datos)
 
 El modelo relacional está diseñado para garantizar integridad referencial, trazabilidad jurídica y auditoría total de cada acción realizada.
 
@@ -73,7 +67,7 @@ El modelo relacional está diseñado para garantizar integridad referencial, tra
 >
 > ![Diagrama Entidad-Relación](docs/base-de-datos-erd.png)
 >
-> 🔗 *[Ver Diagrama Interactivo de Base de Datos (ERD)](.archify/erd-base-de-datos-20261014-120700/base-de-datos.html)*
+> *[Ver Diagrama Interactivo de Base de Datos (ERD)](.archify/erd-base-de-datos-20261014-120700/base-de-datos.html)*
 
 ### Dominios del Esquema:
 * **Seguridad y Auditoría**:
@@ -95,7 +89,7 @@ El modelo relacional está diseñado para garantizar integridad referencial, tra
 
 ---
 
-## 🔒 Seguridad
+## Seguridad
 
 Dado que la plataforma gestiona información sensible de vehículos, contratistas y personal de campo, la seguridad se implementó desde el diseño (*Security by Design*):
 
@@ -114,14 +108,20 @@ Dado que la plataforma gestiona información sensible de vehículos, contratista
 
 ---
 
-## 📱 Vista Previa de la Aplicación
+## Vista de la Aplicación
 
-> **Inicio de Sesión (PWA Mobile)**
+> **Dashboard App**
 >
-> ![Login](docs/login_pwa.png)
+> ![Dashboard](docs/login_pwa.png)
 
 ---
 
-> **Panel de Control (Dashboard Desktop)**
+> **Planilla**
 >
-> ![Dashboard](docs/Macbook-Air-localhost.png)
+> ![planilla](docs/Macbook-Air-localhost.png)
+
+---
+
+> **Revision de Planilla**
+>
+> ![planilla 2](docs/tech-stack.png)
