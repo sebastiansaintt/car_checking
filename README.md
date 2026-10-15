@@ -110,7 +110,7 @@ Dado que la plataforma gestiona información sensible de vehículos, contratista
 
 ## Vista de la Aplicación
 
-> **Dashboard App**
+> **Revision de planilla**
 >
 > ![Dashboard](docs/login_pwa.png)
 
@@ -122,6 +122,6 @@ Dado que la plataforma gestiona información sensible de vehículos, contratista
 
 ---
 
-> **Revision de Planilla**
+> **Dashboard App**
 >
 > ![planilla 2](docs/tech-stack.png)
